@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Description>Simple RDBMS embedded index builder - MySql</Description>
+    <Copyright>by Daniele Fusi</Copyright>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Version>1.0.6</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Schema.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Schema.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MySql.Data" Version="8.0.25" />
+    <PackageReference Include="SqlKata" Version="2.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Embix.Core\Embix.Core.csproj" />
+  </ItemGroup>
+
+</Project>

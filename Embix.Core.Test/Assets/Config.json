@@ -1,0 +1,62 @@
+﻿{
+  "FilterChains": [
+    {
+      "Id": "tag-wsp-std",
+      "Filters": [
+        {
+          "Id": "text-filter.tag"
+        },
+        {
+          "Id": "text-filter.whitespace"
+        },
+        {
+          "Id": "text-filter.standard"
+        }
+      ]
+    },
+    {
+      "Id": "stp",
+      "Filters": [
+        {
+          "Id": "text-filter.stopword"
+        }
+      ]
+    }
+  ],
+  "Tokenizers": [
+    {
+      "Id": "std",
+      "TypeId": "string-tokenizer.standard",
+      "FilterChain": "stp"
+    },
+    {
+      "Id": "nul",
+      "TypeId": "string-tokenizer.null"
+    }
+  ],
+  "TokenFieldLengths": {
+      "value": 100,
+      "language": 5
+  },
+  "OccurrenceFieldLengths": {},
+  "MetadataFields": [
+    "rank",
+    "yearMin",
+    "yearMax"
+  ],
+  "Documents": [
+    {
+      "Id": "place",
+      "CountSql": "SELECT COUNT(*) FROM place;",
+      "DataSql": "SELECT title AS plttl, description AS pldsc, details AS pldtl, id AS m_targetId FROM place ORDER BY place.id LIMIT {1} OFFSET {0};",
+      "TextFilterChains": {
+        "*": "tag-wsp-std",
+        "nmlng": "lng"
+      },
+      "Tokenizers": {
+        "*": "std",
+        "nmlng": "nul"
+      }
+    }
+  ]
+}
