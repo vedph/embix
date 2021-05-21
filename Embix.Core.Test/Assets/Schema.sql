@@ -2,7 +2,6 @@
 
 CREATE TABLE `token` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `targetId` varchar(20) NOT NULL,
   `value` varchar(100) NOT NULL,
   `language` varchar(5) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -12,12 +11,11 @@ CREATE TABLE `token` (
 
 -- occurrence
 
--- `embix-test`.occurrence definition
-
 CREATE TABLE `occurrence` (
   `id` int NOT NULL AUTO_INCREMENT,
   `tokenId` int NOT NULL,
   `field` char(5) NOT NULL,
+  `targetId` varchar(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `occurrence_FK` (`tokenId`),
   KEY `occurrence_field_IDX` (`field`) USING BTREE,

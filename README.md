@@ -86,7 +86,6 @@ Whatever the fields we select, the target index has a very simple schema, consis
 - `token` table: all the tokens from 1 or more languages. Each combination of token and language is unique in the table.
 
   - `id` (int PK AI): a numeric identifier assigned by the system to the token. This is usually an autonumber field in a RDBMS, even though Embix does explicitly assign numbers on behalf of the database. This is essentially done for performance reasons, as generating an ID on the client side allows Embix to spare a travel back to the database for each newly added record just to get its assigned ID.
-  - `targetId` (string): this is a string with the ID of the record from the corresponding source query. This ID is not necessarily a string; but using a string ensures that we can store in the same table any type of ID (numeric, GUID, etc.).
   - `value` (string): the token's text value.
   - `language`: an optional (nullable) language code (usually [ISO-639](https://en.wikipedia.org/wiki/ISO_639)).
 
@@ -95,6 +94,7 @@ Whatever the fields we select, the target index has a very simple schema, consis
   - `id` (int PK AI): an numeric identifier assigned by the system to the occurrence. This is handled by the RDBMS system.
   - `tokenId` (int FK): the ID of the token this occurrence refers to.
   - `field` (string): the field name as derived from the document's query, identifying the original table's name and field name.
+  - `targetId` (string): this is a string with the ID of the record from the corresponding source query. This ID is not necessarily a string; but using a string ensures that we can store in the same table any type of ID (numeric, GUID, etc.).
   - any other field from metadata. These are all optional fields, defined by users, so that they are always nullable.
 
 In the case of the sample query above, a record from the `place` table would provide texts from 3 fields (coded as `plttl`, `pldsc`, `pldtl`). Each of these texts will be processed according to the document's configuration, which specifies:

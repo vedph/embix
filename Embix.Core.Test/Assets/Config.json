@@ -35,10 +35,10 @@
     }
   ],
   "TokenFieldLengths": {
-      "value": 100,
-      "language": 5
+    "value": 100,
+    "language": 5
   },
-  "OccurrenceFieldLengths": {},
+  "OccurrenceFieldLengths": { },
   "MetadataFields": [
     "rank",
     "yearMin",

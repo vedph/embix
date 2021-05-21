@@ -111,14 +111,14 @@ namespace Embix.Core
             TokenCacheSize = 100;
 
             _occFields = GetOccurrenceFields();
-            _tokFields = new[] { "id", "targetId", "value", "language" };
+            _tokFields = new[] { "id", "value", "language" };
         }
 
         private string[] GetOccurrenceFields()
         {
             List<string> fields = new List<string>(new[]
             {
-                "tokenId", "field"
+                "tokenId", "field", "targetId"
             });
             fields.AddRange(Profile.MetadataFields);
             return fields.ToArray();
@@ -210,8 +210,6 @@ namespace Embix.Core
                     {
                         // id
                         tokenId,
-                        // targetId
-                        GetMetadataValue(META_TARGET_ID, metadata),
                         // value
                         GetSafeLengthString(true, "value", key.Item2),
                         // language
@@ -224,7 +222,9 @@ namespace Embix.Core
             data.AddRange(new object[]
             {
                 tokenId,
-                field
+                field,
+                // targetId
+                GetMetadataValue(META_TARGET_ID, metadata)
             });
             Logger?.LogDebug($"  occ: {tokenId} [{field}]");
             if (_occFields.Length > 2)
