@@ -2,6 +2,7 @@
 using MySql.Data.MySqlClient;
 using System;
 using System.Data;
+using System.Data.Common;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -39,11 +40,15 @@ namespace Embix.MySql
 
         private static bool TableExists(string table, IDbConnection connection)
         {
+            DbConnectionStringBuilder builder = new DbConnectionStringBuilder();
+            builder.ConnectionString = connection.ConnectionString;
+            string databaseName = builder["Database"] as string;
+
             IDbCommand cmd = connection.CreateCommand();
             // https://stackoverflow.com/questions/464474/check-if-a-sql-table-exists
             cmd.CommandText = "SELECT CASE WHEN EXISTS(" +
                 "(SELECT * FROM information_schema.tables " +
-                $"WHERE table_name = '{table}')" +
+                $"WHERE table_name = '{table}' AND table_schema='{databaseName}')" +
                 ") THEN 1 ELSE 0 END;";
             long n = (long)cmd.ExecuteScalar();
             return n == 1;

@@ -230,7 +230,7 @@ namespace Embix.Core
             if (_occFields.Length > 2)
             {
                 foreach (string fld in _occFields
-                    .Where(f => f != "tokenId" && f != "field"))
+                    .Where(f => f != "tokenId" && f != "field" && f != "targetId"))
                 {
                     object value = null;
                     if (metadata.ContainsKey(fld))
