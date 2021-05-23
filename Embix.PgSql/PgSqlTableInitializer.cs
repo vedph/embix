@@ -1,5 +1,5 @@
 ﻿using Embix.Core;
-using MySql.Data.MySqlClient;
+using Npgsql;
 using System;
 using System.Data;
 using System.Data.Common;
@@ -7,23 +7,17 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 
-namespace Embix.MySql
+namespace Embix.PgSql
 {
     /// <summary>
-    /// MySql table initializer.
+    /// PostgreSql table initializer.
     /// </summary>
     /// <seealso cref="ITableInitializer" />
-    public class MySqlTableInitializer : ITableInitializer
+    public class PgSqlTableInitializer : ITableInitializer
     {
         private readonly IDbConnectionFactory _connFactory;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MySqlTableInitializer"/>
-        /// class.
-        /// </summary>
-        /// <param name="factory">The factory.</param>
-        /// <exception cref="ArgumentNullException">factory</exception>
-        public MySqlTableInitializer(IDbConnectionFactory factory)
+        public PgSqlTableInitializer(IDbConnectionFactory factory)
         {
             _connFactory = factory
                 ?? throw new ArgumentNullException(nameof(factory));
@@ -37,7 +31,7 @@ namespace Embix.MySql
         {
             using StreamReader reader = new StreamReader(
                 Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("Embix.MySql.Assets.Schema.sql"),
+                .GetManifestResourceStream("Embix.PgSql.Assets.Schema.sql"),
                 Encoding.UTF8);
             return reader.ReadToEnd();
         }
@@ -67,24 +61,23 @@ namespace Embix.MySql
         /// tables when present.</param>
         public void Initialize(bool clear)
         {
-            using MySqlConnection connection =
-                (MySqlConnection)_connFactory.GetConnection();
+            using NpgsqlConnection connection =
+                (NpgsqlConnection)_connFactory.GetConnection();
             connection.Open();
 
             if (!TableExists("token", connection))
             {
-                // https://stackoverflow.com/questions/1324693/c-mysql-ado-net-delimiter-causing-syntax-error
-                MySqlScript script = new MySqlScript(connection, GetSql());
-                script.Execute();
+                NpgsqlCommand cmd = new NpgsqlCommand(GetSql(), connection);
+                cmd.ExecuteNonQuery();
             }
             else if (clear)
             {
-                MySqlScript script = new MySqlScript(connection,
+                NpgsqlCommand cmd = new NpgsqlCommand(
                     "SET FOREIGN_KEY_CHECKS=0;\n" +
                     "TRUNCATE TABLE token;\n" +
                     "TRUNCATE TABLE occurrence;\n" +
-                    "SET FOREIGN_KEY_CHECKS=1;\n");
-                script.Execute();
+                    "SET FOREIGN_KEY_CHECKS=1;\n", connection);
+                cmd.ExecuteNonQuery();
             }
             connection.Close();
         }

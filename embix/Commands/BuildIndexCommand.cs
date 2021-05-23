@@ -1,6 +1,7 @@
 ﻿using Embix.Core;
 using Embix.Core.Config;
 using Embix.MySql;
+using Embix.PgSql;
 using Fusi.Tools;
 using Microsoft.Extensions.CommandLineUtils;
 using ShellProgressBar;
@@ -138,6 +139,13 @@ namespace Embix.Commands
                         connString);
                     initializer = new MySqlTableInitializer(
                         new MySqlDbConnectionFactory(connString));
+                    break;
+                case "pgsql":
+                    factory = new PgSqlIndexBuilderFactory(
+                        LoadText(_profilePath),
+                        connString);
+                    initializer = new PgSqlTableInitializer(
+                        new PgSqlDbConnectionFactory(connString));
                     break;
                 default:
                     throw new ArgumentException("Invalid db type: " + _dbType);

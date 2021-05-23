@@ -1,5 +1,6 @@
 ﻿using Embix.Core;
 using Embix.MySql;
+using Embix.PgSql;
 using Microsoft.Extensions.CommandLineUtils;
 using System;
 using System.Threading.Tasks;
@@ -35,7 +36,7 @@ namespace Embix.Commands
                 "The database name");
 
             CommandOption dbTypeOption = command.Option("-t|--type",
-                "The type of database: mysql (default), mssql, pgsql",
+                "The type of database: mysql (default), pgsql",
                 CommandOptionType.SingleValue);
 
             CommandOption clearOption = command.Option("-c|--clear",
@@ -64,13 +65,17 @@ namespace Embix.Commands
                 $"Database type: {_dbType}\n");
 
             Serilog.Log.Information("INIT INDEX");
-            string connString = _options.Configuration["ConnectionStrings:MySql"];
+            string connString = _options.Configuration[$"ConnectionStrings:{_dbType}"];
             ITableInitializer initializer;
             switch (_dbType.ToLowerInvariant())
             {
                 case "mysql":
                     initializer = new MySqlTableInitializer(
                         new MySqlDbConnectionFactory(connString));
+                    break;
+                case "pgsql":
+                    initializer = new PgSqlTableInitializer(
+                        new PgSqlDbConnectionFactory(connString));
                     break;
                 default:
                     throw new ArgumentException("Invalid db type: " + _dbType);
