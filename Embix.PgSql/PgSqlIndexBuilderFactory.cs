@@ -1,6 +1,7 @@
 ﻿using Embix.Core.Config;
 using System;
 using SqlKata.Compilers;
+using System.Reflection;
 
 namespace Embix.PgSql
 {
@@ -17,10 +18,12 @@ namespace Embix.PgSql
         /// <param name="profile">The profile code.</param>
         /// <param name="connString">The connection string.</param>
         /// <exception cref="ArgumentNullException">connString</exception>
-        public PgSqlIndexBuilderFactory(string profile, string connString)
+        public PgSqlIndexBuilderFactory(string profile, string connString,
+            params Assembly[] additionalAssemblies)
             : base(profile,
                   new PgSqlDbConnectionFactory(connString),
-                  new PostgresCompiler())
+                  new PostgresCompiler(),
+                  additionalAssemblies)
         {
         }
     }

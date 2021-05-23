@@ -1,6 +1,7 @@
 ﻿using Embix.Core.Config;
 using SqlKata.Compilers;
 using System;
+using System.Reflection;
 
 namespace Embix.MySql
 {
@@ -17,10 +18,12 @@ namespace Embix.MySql
         /// <param name="profile">The profile code.</param>
         /// <param name="connString">The connection string.</param>
         /// <exception cref="ArgumentNullException">connString</exception>
-        public MySqlIndexBuilderFactory(string profile, string connString)
+        public MySqlIndexBuilderFactory(string profile, string connString,
+            params Assembly[] additionalAssemblies)
             : base(profile,
                   new MySqlDbConnectionFactory(connString),
-                  new MySqlCompiler())
+                  new MySqlCompiler(),
+                  additionalAssemblies)
         {
         }
     }
