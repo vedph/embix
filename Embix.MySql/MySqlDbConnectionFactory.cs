@@ -9,7 +9,7 @@ namespace Embix.MySql
     /// A connection factory for MySql.
     /// </summary>
     /// <seealso cref="IDbConnectionFactory" />
-    public sealed class MySqlDbConnectionFactory : IDbConnectionFactory
+    public class MySqlDbConnectionFactory : IDbConnectionFactory
     {
         private readonly string _connString;
 
