@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SimpleInjector;
 using SqlKata.Compilers;
 using System;
+using System.Reflection;
 
 namespace Embix.Core.Config
 {
@@ -17,6 +18,7 @@ namespace Embix.Core.Config
         private readonly IConfiguration _configuration;
         private IIndexWriter _writer;
         private readonly IDbConnectionFactory _connFactory;
+        private readonly Assembly[] _addAssemblies;
 
         /// <summary>
         /// Gets the SQL compiler.
@@ -39,17 +41,23 @@ namespace Embix.Core.Config
         /// </summary>
         /// <param name="profile">The profile.</param>
         /// <param name="compiler">The compiler.</param>
+        /// <param name="additionalAssemblies">The optional additional assemblies
+        /// to look for filters and tokenizers.</param>
         /// <exception cref="ArgumentNullException">compiler or profile</exception>
         protected IndexBuilderFactoryBase(
             string profile,
             IDbConnectionFactory factory,
-            Compiler compiler)
+            Compiler compiler,
+            params Assembly[] additionalAssemblies)
         {
-            SqlCompiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
             _profileCode = profile ?? throw new ArgumentNullException(nameof(profile));
             _connFactory = factory ?? throw new ArgumentNullException(nameof(factory));
+            SqlCompiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+
             _configuration = new ConfigurationBuilder()
                 .AddInMemoryJson(profile).Build();
+            _addAssemblies = additionalAssemblies;
+
             Profile = new EmbixProfile(profile, GetFactory());
         }
 
@@ -60,12 +68,11 @@ namespace Embix.Core.Config
 
         private void EnsureContainer()
         {
-            if (Container == null)
-            {
-                Container = new Container();
-                EmbixFilterFactory.ConfigureServices(Container);
-                Container.Verify();
-            }
+            if (Container != null) return;
+
+            Container = new Container();
+            EmbixFilterFactory.ConfigureServices(Container, _addAssemblies);
+            Container.Verify();
         }
 
         /// <summary>
