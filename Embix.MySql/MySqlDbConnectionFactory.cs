@@ -11,7 +11,10 @@ namespace Embix.MySql
     /// <seealso cref="IDbConnectionFactory" />
     public class MySqlDbConnectionFactory : IDbConnectionFactory
     {
-        private readonly string _connString;
+        /// <summary>
+        /// The connection string.
+        /// </summary>
+        protected string ConnectionString;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MySqlDbConnectionFactory"/>
@@ -21,14 +24,14 @@ namespace Embix.MySql
         /// <exception cref="ArgumentNullException">connString</exception>
         public MySqlDbConnectionFactory(string connString)
         {
-            _connString = connString
-                ?? throw new System.ArgumentNullException(nameof(connString));
+            ConnectionString = connString
+                ?? throw new ArgumentNullException(nameof(connString));
         }
 
         /// <summary>
         /// Gets a new connection to the database.
         /// </summary>
         /// <returns>Connection.</returns>
-        public IDbConnection GetConnection() => new MySqlConnection(_connString);
+        public IDbConnection GetConnection() => new MySqlConnection(ConnectionString);
     }
 }

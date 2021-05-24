@@ -11,7 +11,10 @@ namespace Embix.PgSql
     /// <seealso cref="IDbConnectionFactory" />
     public class PgSqlDbConnectionFactory : IDbConnectionFactory
     {
-        private readonly string _connString;
+        /// <summary>
+        /// The connection string.
+        /// </summary>
+        protected string ConnectionString;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MySqlDbConnectionFactory"/>
@@ -21,7 +24,7 @@ namespace Embix.PgSql
         /// <exception cref="ArgumentNullException">connString</exception>
         public PgSqlDbConnectionFactory(string connString)
         {
-            _connString = connString
+            ConnectionString = connString
                 ?? throw new ArgumentNullException(nameof(connString));
         }
 
@@ -29,6 +32,6 @@ namespace Embix.PgSql
         /// Gets a new connection to the database.
         /// </summary>
         /// <returns>Connection.</returns>
-        public IDbConnection GetConnection() => new NpgsqlConnection(_connString);
+        public IDbConnection GetConnection() => new NpgsqlConnection(ConnectionString);
     }
 }
