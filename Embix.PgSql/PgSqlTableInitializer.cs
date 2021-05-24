@@ -73,10 +73,8 @@ namespace Embix.PgSql
             else if (clear)
             {
                 NpgsqlCommand cmd = new NpgsqlCommand(
-                    "SET FOREIGN_KEY_CHECKS=0;\n" +
-                    "TRUNCATE TABLE token;\n" +
-                    "TRUNCATE TABLE occurrence;\n" +
-                    "SET FOREIGN_KEY_CHECKS=1;\n", connection);
+                    "TRUNCATE TABLE occurrence RESTART IDENTITY;\n" +
+                    "TRUNCATE TABLE token RESTART IDENTITY;\n", connection);
                 cmd.ExecuteNonQuery();
             }
             connection.Close();
