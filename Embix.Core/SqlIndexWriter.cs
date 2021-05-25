@@ -270,8 +270,8 @@ namespace Embix.Core
                     SqlCompiler);
 
                 Logger?.LogInformation(
-                    $"Flushing T:{tokLimit} ({_tokenQueue.Count})" +
-                    $"O:{occLimit} ({_occQueue.Count}");
+                    $"Flushing T:{tokLimit} ({_tokenQueue.Count}) " +
+                    $"O:{occLimit} ({_occQueue.Count})");
 
                 // tokens
                 while ((final || data.Count < tokLimit)
