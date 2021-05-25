@@ -2,7 +2,7 @@
   "profiles": {
     "embix": {
       "commandName": "Project",
-      "commandLineArgs": "build-index c:\\users\\dfusi\\desktop\\Config.json pleiades -c -p 1"
+      "commandLineArgs": "init-index pleiades -t pgsql -c"
     }
   }
 }

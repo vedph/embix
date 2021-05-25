@@ -38,18 +38,12 @@ namespace Embix.PgSql
 
         private static bool TableExists(string table, IDbConnection connection)
         {
-            DbConnectionStringBuilder builder = new DbConnectionStringBuilder();
-            builder.ConnectionString = connection.ConnectionString;
-            string databaseName = builder["Database"] as string;
-
             IDbCommand cmd = connection.CreateCommand();
-            // https://stackoverflow.com/questions/464474/check-if-a-sql-table-exists
-            cmd.CommandText = "SELECT CASE WHEN EXISTS(" +
-                "(SELECT * FROM information_schema.tables " +
-                $"WHERE table_name = '{table}' AND table_schema='{databaseName}')" +
-                ") THEN 1 ELSE 0 END;";
-            long n = (long)cmd.ExecuteScalar();
-            return n == 1;
+            cmd.CommandText = "SELECT EXISTS(" +
+                "SELECT FROM pg_tables " +
+                $"WHERE tablename = '{table}' AND schemaname='public'" +
+                ");";
+            return (bool)cmd.ExecuteScalar();
         }
 
         /// <summary>
@@ -73,8 +67,8 @@ namespace Embix.PgSql
             else if (clear)
             {
                 NpgsqlCommand cmd = new NpgsqlCommand(
-                    "TRUNCATE TABLE occurrence RESTART IDENTITY;\n" +
-                    "TRUNCATE TABLE token RESTART IDENTITY;\n", connection);
+                    "TRUNCATE TABLE occurrence RESTART IDENTITY CASCADE;\n" +
+                    "TRUNCATE TABLE token RESTART IDENTITY CASCADE;\n", connection);
                 cmd.ExecuteNonQuery();
             }
             connection.Close();

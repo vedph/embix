@@ -65,7 +65,8 @@ namespace Embix.Commands
                 $"Database type: {_dbType}\n");
 
             Serilog.Log.Information("INIT INDEX");
-            string connString = _options.Configuration[$"ConnectionStrings:{_dbType}"];
+            string connString = string.Format(
+                _options.Configuration[$"ConnectionStrings:{_dbType}"], _dbName);
             ITableInitializer initializer;
             switch (_dbType.ToLowerInvariant())
             {
