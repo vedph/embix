@@ -128,7 +128,7 @@ namespace Embix.Commands
             Serilog.Log.Information("BUILD INDEX");
             IIndexBuilderFactory factory = null;
             string connString = string.Format(
-                _options.Configuration["ConnectionStrings:MySql"], _dbName);
+                _options.Configuration[$"ConnectionStrings:{_dbType}"], _dbName);
             ITableInitializer initializer = null;
 
             switch (_dbType.ToLowerInvariant())

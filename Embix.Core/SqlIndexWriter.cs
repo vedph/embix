@@ -73,7 +73,7 @@ namespace Embix.Core
         /// Gets or sets the size of the token cache. You can set this to 0
         /// to disable caching (not recommended for production).
         /// </summary>
-        protected int TokenCacheSize { get; set; }
+        public int TokenCacheSize { get; set; }
 
         /// <summary>
         /// Gets or sets the optional metadata supplier to be used.
@@ -227,7 +227,7 @@ namespace Embix.Core
                 // targetid
                 GetMetadataValue(META_TARGET_ID, metadata)
             });
-            Logger?.LogDebug($"  occ: {tokenId} [{field}]");
+            Logger?.LogDebug($"  O: {tokenId} [{field}]");
             if (_occFields.Length > 2)
             {
                 foreach (string fld in _occFields
@@ -257,19 +257,21 @@ namespace Embix.Core
         {
             lock (_locker)
             {
+                if (_tokenQueue.IsEmpty && _occQueue.IsEmpty) return;
+
                 int occLimit = _occQueue.Count;
                 int tokLimit = _tokenQueue.Count;
 
                 // https://sqlkata.com/docs/update
-                Logger?.LogInformation($"Flushing {_tokenQueue.Count} tokens, " +
-                    $"{_occQueue.Count} occurrences");
-
                 List<object[]> data = new List<object[]>();
                 object[] datum;
-
                 QueryFactory queryFactory = new QueryFactory(
                     _connFactory.GetConnection(),
                     SqlCompiler);
+
+                Logger?.LogInformation(
+                    $"Flushing T:{tokLimit} ({_tokenQueue.Count})" +
+                    $"O:{occLimit} ({_occQueue.Count}");
 
                 // tokens
                 while ((final || data.Count < tokLimit)
@@ -284,18 +286,22 @@ namespace Embix.Core
                         .AsInsert(_tokFields, data);
                     queryFactory.Execute(query);
                 }
-                Logger?.LogInformation("Tokens flushed");
+                Logger?.LogInformation("Tokens flushed: " + data.Count);
 
                 // occurrences
                 data.Clear();
                 while ((final || data.Count < occLimit)
-                    && _occQueue.TryDequeue(out datum))
+                       && _occQueue.TryDequeue(out datum))
                 {
                     // store only if its token has been stored, else enqueue again
                     if (StoredTokenIds.ContainsKey((int)datum[0]))
                         data.Add(datum);
                     else
+                    {
+                        Logger?.LogWarning(
+                            $"Re-enqueue T{datum[0]}@{datum[1]}=>{datum[2]}");
                         _occQueue.Enqueue(datum);
+                    }
                 }
                 if (data.Count > 0)
                 {
@@ -303,10 +309,10 @@ namespace Embix.Core
                         .AsInsert(_occFields, data);
                     queryFactory.Execute(query);
                 }
-                Logger?.LogInformation("Occurrences flushed");
+                Logger?.LogInformation("Occurrences flushed: " + data.Count);
 
                 Logger?.LogInformation("Flushing completed " +
-                    $"({_tokenQueue.Count} {_occQueue.Count})");
+                    $"(T:{_tokenQueue.Count} O:{_occQueue.Count})");
             }
         }
 
