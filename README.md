@@ -71,7 +71,7 @@ In this sample, we could define our "document" with a `SELECT` query template li
 SELECT title AS plttl,
       description AS pldsc,
       details AS pldtl,
-      id AS m_targetId
+      id AS m_targetid
       FROM place
       ORDER BY place.id
       LIMIT {1} OFFSET {0};
@@ -79,7 +79,7 @@ SELECT title AS plttl,
 
 This query defines a "document", i.e. a source of text to be indexed, here with 3 fields to be indexed (`title`, `description`, `details`), and a fourth one (`id`) to be used as metadata during indexing (the convention is to prefix each alias of a metadatum field with `m_`).
 
-In this case, the metadatum is just the ID of the record being indexed, which is always required, and must be aliased as `m_targetId`; but also other metadata might be used, like e.g. `m_language`.
+In this case, the metadatum is just the ID of the record being indexed, which is always required, and must be aliased as `m_targetid`; but also other metadata might be used, like e.g. `m_language`.
 
 Whatever the fields we select, the target index has a very simple schema, consisting of 2 tables:
 
@@ -164,7 +164,7 @@ For example, consider this profile having 2 chains, 2 tokenizers, and 1 document
     {
       "Id": "place",
       "CountSql": "SELECT COUNT(*) FROM place;",
-      "DataSql": "SELECT title AS plttl, description AS pldsc, details AS pldtl, id AS m_targetId FROM place ORDER BY place.id LIMIT {1} OFFSET {0};",
+      "DataSql": "SELECT title AS plttl, description AS pldsc, details AS pldtl, id AS m_targetid FROM place ORDER BY place.id LIMIT {1} OFFSET {0};",
       "TextFilterChains": {
         "*": "tag-wsp-std",
         "nmlng": "lng"

@@ -48,7 +48,7 @@
     {
       "Id": "place",
       "CountSql": "SELECT COUNT(*) FROM place;",
-      "DataSql": "SELECT title AS plttl, description AS pldsc, details AS pldtl, id AS m_targetId FROM place ORDER BY place.id LIMIT {1} OFFSET {0};",
+      "DataSql": "SELECT title AS plttl, description AS pldsc, details AS pldtl, id AS m_targetid FROM place ORDER BY place.id LIMIT {1} OFFSET {0};",
       "TextFilterChains": {
         "*": "tag-wsp-std",
         "nmlng": "lng"

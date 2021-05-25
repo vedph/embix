@@ -21,7 +21,7 @@ namespace Embix.Core
         /// <summary>
         /// The key for the language entry in token's metadata.
         /// </summary>
-        public const string META_TOKEN_ID = "tokenId";
+        public const string META_TOKEN_ID = "tokenid";
 
         /// <summary>
         /// The key for the language entry in token's metadata.
@@ -31,7 +31,7 @@ namespace Embix.Core
         /// <summary>
         /// The key for the target ID entry in token's metadata.
         /// </summary>
-        public const string META_TARGET_ID = "targetId";
+        public const string META_TARGET_ID = "targetid";
 
         private readonly IDbConnectionFactory _connFactory;
         private readonly ConcurrentQueue<object[]> _tokenQueue;
@@ -110,6 +110,7 @@ namespace Embix.Core
             StoredTokenIds = new ConcurrentDictionary<int, bool>();
             TokenCacheSize = 100;
 
+            // setup the names for the target fields
             _occFields = GetOccurrenceFields();
             _tokFields = new[] { "id", "value", "language" };
         }
@@ -118,7 +119,7 @@ namespace Embix.Core
         {
             List<string> fields = new List<string>(new[]
             {
-                "tokenId", "field", "targetId"
+                "tokenid", "field", "targetid"
             });
             fields.AddRange(Profile.MetadataFields);
             return fields.ToArray();
@@ -199,7 +200,7 @@ namespace Embix.Core
         {
             MetadataSupplier?.Supply(documentId, field, token, metadata);
 
-            // token: id, targetId, value, language
+            // token: id, targetid, value, language
             var key = BuildTokenKey(
                 GetMetadataValue<string>(META_LANGUAGE, metadata), token);
             bool isNew = !TokenIds.ContainsKey(key);
@@ -217,20 +218,20 @@ namespace Embix.Core
                     });
             }
 
-            // occurrence: (id is AI), tokenId, field, ...metadata
+            // occurrence: (id is AI), tokenid, field, ...metadata
             List<object> data = new List<object>();
             data.AddRange(new object[]
             {
                 tokenId,
                 field,
-                // targetId
+                // targetid
                 GetMetadataValue(META_TARGET_ID, metadata)
             });
             Logger?.LogDebug($"  occ: {tokenId} [{field}]");
             if (_occFields.Length > 2)
             {
                 foreach (string fld in _occFields
-                    .Where(f => f != "tokenId" && f != "field" && f != "targetId"))
+                    .Where(f => f != "tokenid" && f != "field" && f != "targetid"))
                 {
                     object value = null;
                     if (metadata.ContainsKey(fld))
