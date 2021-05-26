@@ -149,20 +149,19 @@
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
-  <Class Name="Embix.Core.Config.IndexBuilderFactoryBase">
+  <Class Name="Embix.Core.Config.IndexBuilderFactory">
     <Position X="0.5" Y="0.5" Width="1.5" />
     <Members>
       <Method Name="EnsureContainer" Hidden="true" />
       <Method Name="GetFactory" Hidden="true" />
       <Method Name="GetIndexWriter" Hidden="true" />
-      <Method Name="IndexBuilderFactoryBase" Hidden="true" />
     </Members>
     <Compartments>
       <Compartment Name="Fields" Collapsed="true" />
     </Compartments>
     <TypeIdentifier>
-      <HashCode>AAABAAQAAAAAAAAIAAAAAECAgAQAIAAAABEAAAEAAIA=</HashCode>
-      <FileName>Config\IndexBuilderFactoryBase.cs</FileName>
+      <HashCode>AAABAAQAAAAAAAAICAAAAECAgAQAIAAAABEAAAEAAIA=</HashCode>
+      <FileName>Config\IndexBuilderFactory.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
       <Field Name="_writer" />
@@ -187,9 +186,9 @@
     </TypeIdentifier>
     <ShowAsAssociation>
       <Property Name="MetadataSupplier" />
-      <Property Name="AutoNumber" />
       <Property Name="RecordNames" />
       <Property Name="Profile" />
+      <Property Name="AutoNumber" />
     </ShowAsAssociation>
   </Class>
   <Class Name="Embix.Core.BufferedIndexWriter">
@@ -202,7 +201,7 @@
       <Compartment Name="Fields" Collapsed="true" />
     </Compartments>
     <TypeIdentifier>
-      <HashCode>AAAAAAAAACAEAQAACAQAAAAAAAAAAAAQAAAAAAEAAAA=</HashCode>
+      <HashCode>AAAAAAACACAEAQAACAQAAAACAAAAAAAQAAAAAAEAAAA=</HashCode>
       <FileName>BufferedIndexWriter.cs</FileName>
     </TypeIdentifier>
     <ShowAsCollectionAssociation>
@@ -225,7 +224,7 @@
       <Compartment Name="Fields" Collapsed="true" />
     </Compartments>
     <TypeIdentifier>
-      <HashCode>AAIAAAAAAAAAAAAAEAAAAAQAAAAACAAAAAAAAAAIAIA=</HashCode>
+      <HashCode>AAIAAAACAAAAQAAAEAAAAAQAAAAACAAAAAAAAAAIAIA=</HashCode>
       <FileName>IndexWriterBuffer.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
