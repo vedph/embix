@@ -38,11 +38,5 @@ namespace Embix.Core
         /// </param>
         void Write(string documentId, int partitionNr, string field, string token,
             IDictionary<string, object> metadata = null);
-
-        /// <summary>
-        /// Flushes this writer so that pending data is written.
-        /// </summary>
-        /// <param name="final">True if this is the final flush.</param>
-        void Flush(bool final);
     }
 }

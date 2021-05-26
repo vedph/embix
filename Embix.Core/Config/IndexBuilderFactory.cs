@@ -12,13 +12,18 @@ namespace Embix.Core.Config
     /// A base class for factories which ease the creation of a configured
     /// <see cref="IndexBuilder"/>.
     /// </summary>
-    public abstract class IndexBuilderFactoryBase : IIndexBuilderFactory
+    public abstract class IndexBuilderFactory : IIndexBuilderFactory
     {
         private readonly string _profileCode;
         private readonly IConfiguration _configuration;
         private IIndexWriter _writer;
         private readonly IDbConnectionFactory _connFactory;
         private readonly Assembly[] _addAssemblies;
+
+        /// <summary>
+        /// Gets or sets the size of the tokens buffer. Default is 100.
+        /// </summary>
+        public int BufferSize { get; set; }
 
         /// <summary>
         /// Gets the SQL compiler.
@@ -37,14 +42,14 @@ namespace Embix.Core.Config
         public Container Container { get; protected set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IndexBuilderFactoryBase"/> class.
+        /// Initializes a new instance of the <see cref="IndexBuilderFactory"/> class.
         /// </summary>
         /// <param name="profile">The profile.</param>
         /// <param name="compiler">The compiler.</param>
         /// <param name="additionalAssemblies">The optional additional assemblies
         /// to look for filters and tokenizers.</param>
         /// <exception cref="ArgumentNullException">compiler or profile</exception>
-        protected IndexBuilderFactoryBase(
+        protected IndexBuilderFactory(
             string profile,
             IDbConnectionFactory factory,
             Compiler compiler,
@@ -53,6 +58,8 @@ namespace Embix.Core.Config
             _profileCode = profile ?? throw new ArgumentNullException(nameof(profile));
             _connFactory = factory ?? throw new ArgumentNullException(nameof(factory));
             SqlCompiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+
+            BufferSize = 100;
 
             _configuration = new ConfigurationBuilder()
                 .AddInMemoryJson(profile).Build();
@@ -63,7 +70,10 @@ namespace Embix.Core.Config
 
         private IIndexWriter GetIndexWriter()
         {
-            return _writer ??= new SqlIndexWriter(Profile, _connFactory, SqlCompiler);
+            return _writer ??= new SqlIndexWriter(Profile, _connFactory, SqlCompiler)
+            {
+                BufferSize = BufferSize
+            };
         }
 
         private void EnsureContainer()

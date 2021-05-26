@@ -47,20 +47,10 @@ namespace Embix.Core
             Logger?.LogDebug($"[#{partitionNr:000}] Write: {documentId}.{field}: {token}");
         }
 
-        /// <summary>
-        /// Does nothing.
-        /// </summary>
-        /// <param name="final">True if this is the final flush.</param>
-        public void Flush(bool final)
-        {
-            Logger?.LogInformation("Flush");
-        }
-
         private void Dispose(bool disposing)
         {
             if (!_disposed)
             {
-                if (disposing) Flush(true);
                 _disposed = true;
             }
         }

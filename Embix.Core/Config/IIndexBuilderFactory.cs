@@ -9,6 +9,11 @@ namespace Embix.Core.Config
     public interface IIndexBuilderFactory
     {
         /// <summary>
+        /// Gets or sets the size of the tokens buffer.
+        /// </summary>
+        int BufferSize { get; set; }
+
+        /// <summary>
         /// Gets or sets the dependency container, configured to include all
         /// the required assemblies for filter components.
         /// </summary>

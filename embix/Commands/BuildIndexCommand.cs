@@ -24,6 +24,7 @@ namespace Embix.Commands
         private readonly bool _clear;
         private readonly int _partitionCount;
         private readonly int _minPartitionSize;
+        private readonly int _bufferSize;
         private readonly int _recordLimit;
 
         public BuildIndexCommand(
@@ -34,6 +35,7 @@ namespace Embix.Commands
             bool clear,
             int partitionCount,
             int minPartitionSize,
+            int bufferSize,
             int recordLimit)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -44,6 +46,7 @@ namespace Embix.Commands
             _clear = clear;
             _partitionCount = partitionCount;
             _minPartitionSize = minPartitionSize;
+            _bufferSize = bufferSize;
             _recordLimit = recordLimit;
         }
 
@@ -78,18 +81,28 @@ namespace Embix.Commands
                 "will occur.",
                 CommandOptionType.SingleValue);
 
+            CommandOption bufferSizeOption = command.Option("-b|--bufferSize",
+                "Set the write buffer size for tokens (default=100)",
+                CommandOptionType.SingleValue);
+
             CommandOption limitOption = command.Option("-l|--limit",
                 "Set an artificial limit to the records to be indexed (0=none)",
                 CommandOptionType.SingleValue);
 
             command.OnExecute(() =>
             {
-                int pc = 2;
+                int partitionCount = 2;
                 if (partitionCountOption.HasValue())
-                    int.TryParse(partitionCountOption.Value(), out pc);
-                int ps = 100;
+                    int.TryParse(partitionCountOption.Value(), out partitionCount);
+
+                int partitionMinSize = 100;
                 if (partitionMinSizeOption.HasValue())
-                    int.TryParse(partitionMinSizeOption.Value(), out ps);
+                    int.TryParse(partitionMinSizeOption.Value(), out partitionMinSize);
+
+                int bufferSize = 100;
+                if (bufferSizeOption.HasValue())
+                    int.TryParse(bufferSizeOption.Value(), out bufferSize);
+
                 int limit = 0;
                 if (limitOption.HasValue())
                     int.TryParse(limitOption.Value(), out limit);
@@ -100,7 +113,7 @@ namespace Embix.Commands
                     dbNameArgument.Value,
                     dbTypeOption.Value() ?? "mysql",
                     clearOption.HasValue(),
-                    pc, ps,
+                    partitionCount, partitionMinSize, bufferSize,
                     limit);
                 return 0;
             });
@@ -150,14 +163,20 @@ namespace Embix.Commands
                 default:
                     throw new ArgumentException("Invalid db type: " + _dbType);
             }
+            factory.BufferSize = _bufferSize;
 
             initializer.Initialize(_clear);
 
             ProgressBar mainBar = new ProgressBar(100, null, new ProgressBarOptions
             {
-                DisplayTimeInRealTime = false,
-                BackgroundCharacter = '\u2593'
+                DisplayTimeInRealTime = true,
+                EnableTaskBarProgress = true
             });
+            ProgressBarOptions childBarOptionns = new ProgressBarOptions
+            {
+                DisplayTimeInRealTime = false,
+                CollapseWhenFinished = true
+            };
             Dictionary<string, ChildProgressBar> childBars =
                 new Dictionary<string, ChildProgressBar>();
             Regex r = new Regex(@"^\[([^]]+)\]", RegexOptions.Compiled);
@@ -180,7 +199,8 @@ namespace Embix.Commands
                                 if (!childBars.ContainsKey(m.Groups[1].Value))
                                 {
                                     childBars[m.Groups[1].Value] =
-                                        mainBar.Spawn(100, m.Groups[1].Value);
+                                        mainBar.Spawn(100, m.Groups[1].Value,
+                                            childBarOptionns);
                                 }
                                 bar = childBars[m.Groups[1].Value];
                             }

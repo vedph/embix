@@ -344,7 +344,7 @@ namespace Embix.Core
         {
             if (!_disposed)
             {
-                if (disposing) _writer.Flush(true);
+                if (disposing) _writer.Dispose();
                 _disposed = true;
             }
         }

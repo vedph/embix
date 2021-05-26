@@ -8,8 +8,8 @@ namespace Embix.MySql
     /// <summary>
     /// MySql index builder factory.
     /// </summary>
-    /// <seealso cref="IndexBuilderFactoryBase" />
-    public sealed class MySqlIndexBuilderFactory : IndexBuilderFactoryBase
+    /// <seealso cref="IndexBuilderFactory" />
+    public sealed class MySqlIndexBuilderFactory : IndexBuilderFactory
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="MySqlIndexBuilderFactory"/>

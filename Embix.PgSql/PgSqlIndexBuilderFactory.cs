@@ -8,8 +8,8 @@ namespace Embix.PgSql
     /// <summary>
     /// PostgreSql index builder factory.
     /// </summary>
-    /// <seealso cref="IndexBuilderFactoryBase" />
-    public sealed class PgSqlIndexBuilderFactory : IndexBuilderFactoryBase
+    /// <seealso cref="IndexBuilderFactory" />
+    public sealed class PgSqlIndexBuilderFactory : IndexBuilderFactory
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="PgSqlIndexBuilderFactory"/>

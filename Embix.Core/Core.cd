@@ -1,31 +1,43 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1">
   <Class Name="Embix.Core.IndexBuilder">
-    <Position X="0.5" Y="2" Width="1.5" />
+    <Position X="0.5" Y="3.25" Width="1.5" />
     <Members>
       <Field Name="_partitionCount" Hidden="true" />
+      <Method Name="Dispose" Hidden="true" />
       <Method Name="DoIndex" Hidden="true" />
       <Method Name="IndexBuilder" Hidden="true" />
       <Field Name="META_FIELD_PREFIX" Hidden="true" />
     </Members>
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <NestedTypes>
+      <Class Name="Embix.Core.IndexBuilder.IndexTaskOptions" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>IndexBuilder.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
     <TypeIdentifier>
-      <HashCode>AEAAAAAAAACIAAAAAQAAABACgCAAAAAAAAAAAAAAAMA=</HashCode>
+      <HashCode>AEAAAAAAACKMAAAAAQAAARACgCAAAAAAAAAAAAAAAMA=</HashCode>
       <FileName>IndexBuilder.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
       <Field Name="_profile" />
       <Field Name="_writer" />
     </ShowAsAssociation>
+    <Lollipop Position="0.2" />
   </Class>
   <Class Name="Embix.Core.Config.EmbixProfile">
-    <Position X="3.25" Y="1.5" Width="2" />
+    <Position X="3.25" Y="0.5" Width="2" />
     <Members>
       <Field Name="_documents" Hidden="true" />
       <Method Name="EmbixProfile" Hidden="true" />
       <Method Name="LoadDocuments" Hidden="true" />
     </Members>
     <TypeIdentifier>
-      <HashCode>AAAAAIAAAAACAgAAAAAAgAAAAAAAAAACAIgAAACAAAA=</HashCode>
+      <HashCode>AAAAAgAAACASAAAAAAAAgAAAAAAAAAACAIgAAACAAAA=</HashCode>
       <FileName>Config\EmbixProfile.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
@@ -41,7 +53,7 @@
       <Method Name="EmbixFilterFactory" Hidden="true" />
     </Members>
     <TypeIdentifier>
-      <HashCode>AAABAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAACAAAAAA=</HashCode>
+      <HashCode>AAABAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAA=</HashCode>
       <FileName>Config\EmbixFilterFactory.cs</FileName>
     </TypeIdentifier>
   </Class>
@@ -51,54 +63,34 @@
       <Compartment Name="Methods" Collapsed="true" />
     </Compartments>
     <TypeIdentifier>
-      <HashCode>AAACAAAAAAAAAAQEACAAAAAAAAAAAAAAAAAAAAIgAAA=</HashCode>
+      <HashCode>AAACAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAwAIgAAA=</HashCode>
       <FileName>Config\DocumentDefinition.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Embix.Core.SqlIndexWriter">
-    <Position X="4" Y="5.75" Width="1.5" />
+    <Position X="6.25" Y="10.5" Width="1.5" />
     <Members>
-      <Field Name="_occCache" Hidden="true" />
-      <Field Name="_occFields" Hidden="true" />
-      <Field Name="_queryFactory" Hidden="true" />
-      <Field Name="_tokenCache" Hidden="true" />
-      <Method Name="BuildTokenKey" Hidden="true" />
-      <Method Name="EnqueueToken" Hidden="true" />
-      <Method Name="GetMetadataValue" Hidden="true" />
-      <Method Name="GetOccurrenceFields" Hidden="true" />
-      <Method Name="GetTokenId" Hidden="true" />
-      <Field Name="META_LANGUAGE" Hidden="true" />
-      <Field Name="META_TARGET_ID" Hidden="true" />
-      <Field Name="META_TOKEN_ID" Hidden="true" />
       <Method Name="SqlIndexWriter" Hidden="true" />
     </Members>
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
     <TypeIdentifier>
-      <HashCode>AIAAAAgAgAAABAAAAwgABAICgBAIAQAAABBAABEIAAA=</HashCode>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAQAAAAAAEAAAA=</HashCode>
       <FileName>SqlIndexWriter.cs</FileName>
     </TypeIdentifier>
-    <ShowAsAssociation>
-      <Property Name="AutoNumber" />
-    </ShowAsAssociation>
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="Embix.Core.StandardAutoNumber" Collapsed="true">
-    <Position X="6.75" Y="7.25" Width="1.75" />
+    <Position X="8.25" Y="7.25" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAEAA=</HashCode>
       <FileName>StandardAutoNumber.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
-  <Class Name="Embix.Core.NullIndexWriter">
-    <Position X="1.75" Y="5.75" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAA=</HashCode>
-      <FileName>NullIndexWriter.cs</FileName>
-    </TypeIdentifier>
-    <Lollipop Position="0.2" />
-  </Class>
   <Class Name="Embix.Core.StandardStringTokenizer">
-    <Position X="9" Y="5.25" Width="2" />
+    <Position X="9" Y="3.25" Width="2" />
     <Members>
       <Method Name="SetCurrentToken" Hidden="true" />
       <Method Name="StandardStringTokenizer" Hidden="true" />
@@ -116,7 +108,7 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="Embix.Core.Filters.CompositeTextFilter">
-    <Position X="11.75" Y="5" Width="2" />
+    <Position X="11.75" Y="3" Width="2" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAABAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Filters\CompositeTextFilter.cs</FileName>
@@ -126,7 +118,7 @@
     </ShowAsCollectionAssociation>
   </Class>
   <Class Name="Embix.Core.Filters.WhitespaceTextFilter" Collapsed="true">
-    <Position X="12.5" Y="6.75" Width="1.75" />
+    <Position X="12.5" Y="4.75" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Filters\WhitespaceTextFilter.cs</FileName>
@@ -134,7 +126,7 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="Embix.Core.Filters.SeparatorTextFilter" Collapsed="true">
-    <Position X="14.5" Y="6.75" Width="1.75" />
+    <Position X="14.5" Y="4.75" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAABAAAAAAAABAAAAAAAAAAACAAAAAAAAAAAA=</HashCode>
       <FileName>Filters\SeparatorTextFilter.cs</FileName>
@@ -142,7 +134,7 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="Embix.Core.Filters.StandardTextFilter" Collapsed="true">
-    <Position X="12.5" Y="8" Width="1.75" />
+    <Position X="12.5" Y="6" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Filters\StandardTextFilter.cs</FileName>
@@ -150,7 +142,7 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="Embix.Core.Filters.StopwordTextFilter" Collapsed="true">
-    <Position X="14.5" Y="8" Width="1.75" />
+    <Position X="14.5" Y="6" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAABAAIAAAAABAAAgAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Filters\StopwordTextFilter.cs</FileName>
@@ -158,57 +150,135 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="Embix.Core.Config.IndexBuilderFactoryBase">
-    <Position X="0.5" Y="7.75" Width="1.5" />
+    <Position X="0.5" Y="0.5" Width="1.5" />
     <Members>
       <Method Name="EnsureContainer" Hidden="true" />
       <Method Name="GetFactory" Hidden="true" />
       <Method Name="GetIndexWriter" Hidden="true" />
+      <Method Name="IndexBuilderFactoryBase" Hidden="true" />
     </Members>
     <Compartments>
       <Compartment Name="Fields" Collapsed="true" />
     </Compartments>
     <TypeIdentifier>
-      <HashCode>AAABAAQAAAAAAAAAAAAAAECAgAQAIAAAABEAAAEAAIA=</HashCode>
+      <HashCode>AAABAAQAAAAAAAAIAAAAAECAgAQAIAAAABEAAAEAAIA=</HashCode>
       <FileName>Config\IndexBuilderFactoryBase.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
       <Field Name="_writer" />
       <Property Name="Profile" />
     </ShowAsAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Embix.Core.IndexWriter">
+    <Position X="3.25" Y="6" Width="1.5" />
+    <Members>
+      <Method Name="GetMetadataValue" Hidden="true" />
+      <Method Name="GetOccurrenceFields" Hidden="true" />
+      <Method Name="GetSafeLengthString" Hidden="true" />
+      <Method Name="IndexWriter" Hidden="true" />
+    </Members>
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAQAgAgAIAAAAAAQgABAACABAIIQAAABAAAAAAAEA=</HashCode>
+      <FileName>IndexWriter.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="MetadataSupplier" />
+      <Property Name="AutoNumber" />
+      <Property Name="RecordNames" />
+      <Property Name="Profile" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Embix.Core.BufferedIndexWriter">
+    <Position X="3.25" Y="9.25" Width="1.5" />
+    <Members>
+      <Method Name="BufferedIndexWriter" Hidden="true" />
+      <Method Name="Dispose" Hidden="true" />
+    </Members>
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAEAQAACAQAAAAAAAAAAAAQAAAAAAEAAAA=</HashCode>
+      <FileName>BufferedIndexWriter.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Field Name="_buffers" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Embix.Core.IndexRecordNames" Collapsed="true">
+    <Position X="6.25" Y="6" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAIAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IndexRecord.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Embix.Core.IndexWriterBuffer">
+    <Position X="0.5" Y="9" Width="1.5" />
+    <Members>
+      <Method Name="IndexWriterBuffer" Hidden="true" />
+    </Members>
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAAAAAAAEAAAAAQAAAAACAAAAAAAAAAIAIA=</HashCode>
+      <FileName>IndexWriterBuffer.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_writer" />
+    </ShowAsAssociation>
   </Class>
   <Interface Name="Embix.Core.IIndexWriter">
-    <Position X="3.25" Y="4" Width="1.5" />
+    <Position X="3.25" Y="3.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAA=</HashCode>
+      <HashCode>AAAAQAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAA=</HashCode>
       <FileName>IIndexWriter.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Interface Name="Embix.Core.IAutoNumber">
-    <Position X="6.75" Y="5.75" Width="1.75" />
+    <Position X="6.25" Y="7" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>IAutoNumber.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Interface Name="Embix.Core.IStringTokenizer" Collapsed="true">
-    <Position X="9" Y="4" Width="2" />
+    <Position X="9" Y="2" Width="2" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>IStringTokenizer.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Interface Name="Embix.Core.ITokenizer&lt;T&gt;" Collapsed="true">
-    <Position X="9" Y="3" Width="2" />
+    <Position X="9" Y="1" Width="2" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <HashCode>AAAAAAAAAAAAAAAAAAAIAAAAABAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>ITokenizer.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Interface Name="Embix.Core.Filters.ITextFilter">
-    <Position X="14.5" Y="5" Width="1.5" />
+    <Position X="14.5" Y="3" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Filters\ITextFilter.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Embix.Core.IMetadataSupplier">
+    <Position X="6.25" Y="8.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAA=</HashCode>
+      <FileName>IMetadataSupplier.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Embix.Core.IIndexRecordWriter" Collapsed="true">
+    <Position X="0.5" Y="11.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAA=</HashCode>
+      <FileName>IIndexRecordWriter.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Font Name="Segoe UI" Size="9" />
