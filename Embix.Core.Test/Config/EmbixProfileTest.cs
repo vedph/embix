@@ -40,7 +40,7 @@ namespace Embix.Core.Test.Config
             Assert.Equal("place", doc.Id);
             Assert.Equal("SELECT COUNT(*) FROM place;", doc.CountSql);
             Assert.Equal("SELECT title AS plttl, description AS pldsc, " +
-                "details AS pldtl, id AS m_target_id FROM place " +
+                "details AS pldtl, id AS m_targetid FROM place " +
                 "ORDER BY place.id " +
                 "LIMIT {1} OFFSET {0};", doc.DataSql);
             Assert.Equal(2, doc.TextFilterChains.Count);

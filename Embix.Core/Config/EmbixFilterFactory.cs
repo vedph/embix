@@ -62,6 +62,7 @@ namespace Embix.Core.Config
 
             container.Collection.Register<ITextFilter>(assemblies);
             container.Collection.Register<IStringTokenizer>(assemblies);
+            container.Collection.Register<IStringTokenMultiplier>(assemblies);
 
             // required for injection
             container.RegisterInstance(new UniData());
@@ -133,6 +134,38 @@ namespace Embix.Core.Config
                             GetTextFilters(chainId)?.ToArray());
                     }
                     return tokenizer;
+                }
+                index++;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the token multiplier with the specified ID.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <returns>The multiplier, or null if not found.</returns>
+        /// <exception cref="ArgumentNullException">id</exception>
+        public IStringTokenMultiplier GetTokenMultiplier(string id)
+        {
+            if (id == null) throw new ArgumentNullException(nameof(id));
+
+            IConfigurationSection section = Configuration.GetSection("TokenMultipliers");
+            if (!section.Exists()) return null;
+
+            int index = 0;
+            foreach (IConfigurationSection mulSection in section.GetChildren())
+            {
+                // Multiplier/Id
+                if (mulSection["Id"] == id)
+                {
+                    // Multiplier/TypeId, Options
+                    string typeId = mulSection["TypeId"];
+
+                    return GetComponent<IStringTokenMultiplier>(
+                        typeId,
+                        $"TokenMultipliers:{index}:Options",
+                        true);
                 }
                 index++;
             }

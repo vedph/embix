@@ -34,6 +34,12 @@
       "TypeId": "string-tokenizer.null"
     }
   ],
+  "TokenMultipliers": [
+    {
+      "Id": "rev",
+      "TypeId": "string-token-multiplier.reverse"
+    }
+  ],
   "TokenFieldLengths": {
     "value": 100,
     "language": 5

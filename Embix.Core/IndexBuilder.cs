@@ -176,6 +176,16 @@ namespace Embix.Core
                     : options.Profile.GetTokenizer(kv.Value) ?? nullTokenizer;
             }
 
+            // create the set of multipliers for the requested document fields
+            Dictionary<string, IStringTokenMultiplier> multipliers
+                = new Dictionary<string, IStringTokenMultiplier>();
+            foreach (var kv in doc.TokenMultipliers)
+            {
+                multipliers[kv.Key] = string.IsNullOrEmpty(kv.Value)
+                    ? null
+                    : options.Profile.GetTokenMultiplier(kv.Value);
+            }
+
             // for each record
             IDataReader reader = options.Reader;
             while (reader.Read())
@@ -227,9 +237,23 @@ namespace Embix.Core
 
                         foreach (string token in tokenizer.Tokenize(text))
                         {
-                            options.Writer.Write(options.DocumentId,
-                                options.PartitionNumber,
-                                field, token, metadata);
+                            // multiply if required
+                            if (multipliers[field] != null)
+                            {
+                                foreach (string result in
+                                    multipliers[field].Multiply(token))
+                                {
+                                    options.Writer.Write(options.DocumentId,
+                                        options.PartitionNumber,
+                                        field, token, metadata);
+                                }
+                            }
+                            else
+                            {
+                                options.Writer.Write(options.DocumentId,
+                                    options.PartitionNumber,
+                                    field, token, metadata);
+                            }
                         }
                     }
                 }

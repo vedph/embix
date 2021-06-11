@@ -21,7 +21,8 @@ namespace Embix.Core.Test.Config
         internal static EmbixFilterFactory GetFactory()
         {
             Container container = new Container();
-            EmbixFilterFactory.ConfigureServices(container);
+            EmbixFilterFactory.ConfigureServices(container,
+                typeof(EmbixFilterFactoryTest).Assembly);
             container.Verify();
             return new EmbixFilterFactory(container, GetConfiguration());
         }
@@ -42,6 +43,23 @@ namespace Embix.Core.Test.Config
             Assert.Equal(typeof(TagTextFilter), filters[0].GetType());
             Assert.Equal(typeof(WhitespaceTextFilter), filters[1].GetType());
             Assert.Equal(typeof(StandardTextFilter), filters[2].GetType());
+        }
+
+        [Fact]
+        public void GetTokenMultiplier_NotExisting_Null()
+        {
+            IStringTokenMultiplier multiplier =
+                _factory.GetTokenMultiplier("not-existing");
+            Assert.Null(multiplier);
+        }
+
+        [Fact]
+        public void GetTokenMultipliers_Existing_Ok()
+        {
+            IStringTokenMultiplier multiplier =
+                _factory.GetTokenMultiplier("rev");
+            Assert.NotNull(multiplier);
+            Assert.Equal(typeof(ReverseTokenMultiplier), multiplier.GetType());
         }
     }
 }

@@ -118,7 +118,7 @@ namespace Embix.Core.Config
         }
 
         /// <summary>
-        /// Gets the tokenizer.
+        /// Gets the tokenizer with the specified ID.
         /// </summary>
         /// <param name="id">The identifier.</param>
         /// <returns>The tokenizer or null if not found.</returns>
@@ -128,6 +128,19 @@ namespace Embix.Core.Config
             if (id == null) throw new ArgumentNullException(nameof(id));
 
             return _filterFactory.GetTokenizer(id);
+        }
+
+        /// <summary>
+        /// Gets the token multiplier with the specified ID.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <returns>The multiplier or null if not found.</returns>
+        /// <exception cref="ArgumentNullException">id</exception>
+        public IStringTokenMultiplier GetTokenMultiplier(string id)
+        {
+            if (id == null) throw new ArgumentNullException(nameof(id));
+
+            return _filterFactory.GetTokenMultiplier(id);
         }
     }
 }

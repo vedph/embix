@@ -36,6 +36,14 @@ namespace Embix.Core.Config
         public Dictionary<string, string> Tokenizers { get; set; }
 
         /// <summary>
+        /// Gets or sets the token multipliers map, where each field code
+        /// is mapped to the corresponding token multiplier ID if any.
+        /// You can use <c>*</c> as the field code to represent the default
+        /// multiplier.
+        /// </summary>
+        public Dictionary<string, string> TokenMultipliers { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="DocumentDefinition"/>
         /// class.
         /// </summary>
@@ -43,6 +51,7 @@ namespace Embix.Core.Config
         {
             TextFilterChains = new Dictionary<string, string>();
             Tokenizers = new Dictionary<string, string>();
+            TokenMultipliers = new Dictionary<string, string>();
         }
 
         /// <summary>
