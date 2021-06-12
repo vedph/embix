@@ -52,6 +52,7 @@ Currently, Embix provides these features:
 - preserve the information about the _source of each text_, so that we can later limit the search in a subset of the available sources. For instance, in a list of places we might index both the place's name and its description field; later, a user might decide whether to look only among titles, or extend the search to descriptions. Of course, this requires that we save the source of each occurrence of any indexed word.
 - be able to _parallelize the indexing process_ to increase performance. This is an essential requirement to minimize the time cost of indexing, which might be very high.
 - use _any RDBMS system_ among the most popular ones, like MySql/MariaDB, MS SqlServer, or PostgreSql.
+- provide plugins for automatic transliteration of Greek text, with a highly customizable behavior.
 
 Embix provides an infrastructure to automate this process, starting from a simple JSON-encoded indexing profile.
 

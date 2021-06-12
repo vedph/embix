@@ -20,6 +20,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Embix.MySql", "Embix.MySql\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Embix.PgSql", "Embix.PgSql\Embix.PgSql.csproj", "{86060CB2-6655-4990-90A2-358A09AB3A1F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Embix.Plugin.Greek", "Embix.Plugin.Greek\Embix.Plugin.Greek.csproj", "{D283E3CE-9453-42F9-B5D7-35464C466705}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Embix.Plugin.Greek.Test", "Embix.Plugin.Greek.Test\Embix.Plugin.Greek.Test.csproj", "{ABDFBF72-095E-43B6-8BAA-3D955F31A347}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +50,14 @@ Global
 		{86060CB2-6655-4990-90A2-358A09AB3A1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{86060CB2-6655-4990-90A2-358A09AB3A1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{86060CB2-6655-4990-90A2-358A09AB3A1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D283E3CE-9453-42F9-B5D7-35464C466705}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D283E3CE-9453-42F9-B5D7-35464C466705}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D283E3CE-9453-42F9-B5D7-35464C466705}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D283E3CE-9453-42F9-B5D7-35464C466705}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABDFBF72-095E-43B6-8BAA-3D955F31A347}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABDFBF72-095E-43B6-8BAA-3D955F31A347}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABDFBF72-095E-43B6-8BAA-3D955F31A347}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABDFBF72-095E-43B6-8BAA-3D955F31A347}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
