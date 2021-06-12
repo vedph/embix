@@ -238,7 +238,8 @@ namespace Embix.Core
                         foreach (string token in tokenizer.Tokenize(text))
                         {
                             // multiply if required
-                            if (multipliers[field] != null)
+                            if (multipliers.ContainsKey(field)
+                                && multipliers[field] != null)
                             {
                                 foreach (string result in
                                     multipliers[field].Multiply(token))
