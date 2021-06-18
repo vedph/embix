@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Embix.Core.Test
 {
-    public sealed class TokenizerTest
+    public sealed class StandardStringTokenizerTest
     {
         [Theory]
         [InlineData(null, "")]
@@ -14,6 +14,7 @@ namespace Embix.Core.Test
         [InlineData("  ", "")]
         [InlineData("One", "one")]
         [InlineData("One, Two! ", "one two")]
+        [InlineData("it's true!", "it s true")]
         public void Tokenize(string text, string expected)
         {
             var tokenizer = new StandardStringTokenizer

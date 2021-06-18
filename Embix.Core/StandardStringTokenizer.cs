@@ -6,8 +6,9 @@ using System.Text;
 namespace Embix.Core
 {
     /// <summary>
-    /// A simple tokenizer, which just spits out tokens as strings, without any
-    /// other information about them.
+    /// A simple string-tokenizer, which just spits out tokens as strings,
+    /// without any other information about them. Tokens are separated at
+    /// whitespace or apostrophe.
     /// <para>Tag: <c>string-tokenizer.standard</c>.</para>
     /// </summary>
     [Tag("string-tokenizer.standard")]
@@ -50,7 +51,7 @@ namespace Embix.Core
             int start = 0;
             for (int i = 0; i < text.Length; i++)
             {
-                if (text[i] == ' ')
+                if (text[i] == ' ' || text[i] == '\'')
                 {
                     SetCurrentToken(text, start, i - start);
                     Filter?.Apply(_sbToken);
