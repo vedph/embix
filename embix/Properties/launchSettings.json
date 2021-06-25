@@ -2,7 +2,7 @@
   "profiles": {
     "embix": {
       "commandName": "Project",
-      "commandLineArgs": "build-index c:\\users\\dfusi\\desktop\\pleiades-profile-min.json pleiades -t pgsql -c -p 2"
+      "commandLineArgs": "inspect-chars c:\\users\\dfusi\\desktop\\inspect.json packhum c:\\users\\dfusi\\desktop\\chars.csv -t pgsql"
     }
   }
 }

@@ -119,7 +119,7 @@ namespace Embix.Commands
             });
         }
 
-        private static string LoadText(string path)
+        internal static string LoadText(string path)
         {
             using (StreamReader reader = new StreamReader(path, Encoding.UTF8))
             {

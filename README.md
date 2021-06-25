@@ -255,7 +255,7 @@ Syntax:
 ```
 
 - `DatabaseName` is the target database name.
-- `-t` specifies the database type: currently, only `mysql` is implemented. Others will follow as they are needed. Adding a new type is as simple as creating a new project and implementing a couple of classes.
+- `-t` specifies the database type: `pgsql` or `mysql`. Other types will follow as they are needed. Adding a new type is as simple as creating a new project and implementing a couple of classes.
 - `-c` tells the initializer to truncate the tables if they are found. Otherwise, the command will create them.
 
 ### Build Index Command
@@ -270,9 +270,53 @@ Syntax:
 
 - `JsonFilePath` is the path of the JSON profile file for Embix.
 - `DatabaseName` is the target database name.
-- `-t` specifies the database type: currently, only `mysql` is implemented.
+- `-t` specifies the database type: `pgsql` or `mysql`.
 - `-c` tells the initializer to truncate the tables if they are found. Otherwise, the command will create them.
 - `-p` specifies the number of partitions in which input records are distributed during indexing, thus parallelizing the process. The default value is 2. Use 1 to avoid multiple threads, or higher values for better performance (according to the available hardware).
 - `-s` specifies the minimum partition size when using parallelized indexing (default=100). When the total number of records to be indexed for each document is less than this size, no parallelization will occur.
 - `-b` specifies the tokens buffer size. Default value is 100. This is the number of tokens which get buffered in memory before flushing them to the target database. Buffering avoids too many roundtrips to the server, with relevant performance gains.
 - `-l` specifies an artificial limit for the records to be imported. This can be used for test purposes.
+
+### Inspect Characters Command
+
+Inspect the characters from selected documents (in the sense specified above). The documents define all the text fields from all the tables you want to inspect. They are defined in a JSON profile file similar to the one illustrated above, where the root element is an array of document definitions. Each definition has a count query and a data query (no paging here), e.g.:
+
+```json
+[
+  {
+    "CountSql": "SELECT COUNT(*) FROM textnodeproperty p INNER JOIN textnode n ON p.nodeid=n.id WHERE n.corpus='packhum' AND p.name='text';",
+    "DataSql": "SELECT value FROM textnodeproperty p INNER JOIN textnode n ON p.nodeid=n.id WHERE n.corpus='packhum' AND p.name='text';"
+  }
+]
+```
+
+The fields name is not relevant; you should just ensure that any field selected here is a text field, either nullable or not.
+
+Syntax:
+
+```bash
+./embix inspect-chars <JsonFilePath> <DatabaseName> <OutputPath> [-t <DatabaseType>]
+```
+
+- `JsonFilePath` is the path of the JSON profile file for Embix.
+- `DatabaseName` is the target database name.
+- `OutputPath` is the CSV output file path.
+- `-t` specifies the database type: `pgsql` or `mysql`.
+
+Sample output: a CSV file with columns for hexadecimal code, decimal code, Unicode category, glyph, and frequency.
+
+```csv
+hex,dec,cat,glyph,freq
+"0009",9,Sm,.,88
+"000A",10,Sm,.,88
+"000D",13,Sm,.,88
+"0020",32,Zs, ,224
+"0061",97,Ll,a,3
+"0063",99,Ll,c,1
+"0067",103,Ll,g,3
+"03B1",945,Ll,α,59
+"03B2",946,Ll,β,4
+"03B3",947,Ll,γ,10
+"1F00",7936,Ll,ἀ,13
+"2014",8212,Pd,—,134
+```

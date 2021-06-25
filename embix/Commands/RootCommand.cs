@@ -20,6 +20,8 @@ namespace Embix.Commands
                 c => InitIndexCommand.Configure(c, options));
             app.Command("build-index",
                 c => BuildIndexCommand.Configure(c, options));
+            app.Command("inspect-chars",
+                c => InspectCharsCommand.Configure(c, options));
 
             app.OnExecute(() =>
             {

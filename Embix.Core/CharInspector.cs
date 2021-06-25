@@ -3,8 +3,11 @@ using Fusi.Tools;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Text.Json;
 using System.Threading;
+using System.Linq;
+using System.Globalization;
 
 namespace Embix.Core
 {
@@ -19,6 +22,12 @@ namespace Embix.Core
         private readonly IDbConnectionFactory _connFactory;
         private readonly Dictionary<int, long> _counts;
         private CombinedProgressCalculator _calculator;
+        private readonly string[] _uniCatNames = new[]
+        {
+            "Lu", "Ll", "Lt", "Lm", "Lo", "Mn", "Mc", "Me", "Nd", "Nl", "No",
+            "Zs", "Zl", "Zp", "Cc", "Cf", "Cs", "Co", "Pc", "Pd", "Ps", "Pe",
+            "Pi", "Po", "Sm", "Sc", "Sk", "So", "Cn"
+        };
 
         /// <summary>
         /// Gets the counts collected by this inspector. Each key
@@ -113,6 +122,7 @@ namespace Embix.Core
                 new CombinedProgressCalculator(documents.Count) : null;
 
             using IDbConnection connection = _connFactory.GetConnection();
+            connection.Open();
             int docCount = 0;
 
             foreach (DocumentDefinition doc in documents)
@@ -139,7 +149,10 @@ namespace Embix.Core
         {
             if (json == null) throw new ArgumentNullException(nameof(json));
 
-            JsonDocument doc = JsonDocument.Parse(json);
+            JsonDocument doc = JsonDocument.Parse(json, new JsonDocumentOptions
+            {
+                AllowTrailingCommas = true
+            });
             List<DocumentDefinition> documents = new List<DocumentDefinition>();
 
             foreach (JsonElement child in doc.RootElement.EnumerateArray())
@@ -148,6 +161,40 @@ namespace Embix.Core
                     child.GetRawText()));
             }
             Inspect(documents, cancel, progress);
+        }
+
+        /// <summary>
+        /// Saves the counts in CSV format.
+        /// </summary>
+        /// <param name="writer">The writer to write to.</param>
+        /// <exception cref="ArgumentNullException">writer</exception>
+        public void SaveCsv(TextWriter writer)
+        {
+            if (writer is null) throw new ArgumentNullException(nameof(writer));
+
+            writer.WriteLine("hex,dec,cat,glyph,freq");
+            foreach (int code in _counts.Keys.OrderBy(n => n))
+            {
+                // hex dec
+                writer.Write($"\"{code:X4}\",{code},");
+
+                // cat
+                char c = code < 32 || code == 127 ? '.' : (char)code;
+                var cat = char.GetUnicodeCategory(c);
+                writer.Write($"{_uniCatNames[(int)cat]},");
+
+                // glyph
+                if (c == ',') writer.Write("\",\",");
+                else
+                {
+                    if (cat == UnicodeCategory.NonSpacingMark) writer.Write(' ');
+                    writer.Write($"{c},");
+                }
+
+                // frequency
+                writer.WriteLine(_counts[code]);
+            }
+            writer.Flush();
         }
     }
 }
