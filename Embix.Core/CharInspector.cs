@@ -26,7 +26,7 @@ namespace Embix.Core
         {
             "Lu", "Ll", "Lt", "Lm", "Lo", "Mn", "Mc", "Me", "Nd", "Nl", "No",
             "Zs", "Zl", "Zp", "Cc", "Cf", "Cs", "Co", "Pc", "Pd", "Ps", "Pe",
-            "Pi", "Po", "Sm", "Sc", "Sk", "So", "Cn"
+            "Pi", "Pf", "Po", "Sm", "Sc", "Sk", "So", "Cn"
         };
 
         /// <summary>
