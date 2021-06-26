@@ -8,11 +8,19 @@ namespace Embix.Plugin.Greek
 {
     /// <summary>
     /// Ancient (polytonic) Greek romanizer filter.
+    /// Tag: <c>text-filter.grc-romanizer</c>.
     /// </summary>
     /// <seealso cref="ITextFilter" />
     /// <seealso cref="IConfigurable{GrcRomanizerTextFilterOptions}" />
+    [Tag("text-filter.grc-romanizer")]
     public class GrcRomanizerTextFilter : GrcRomanizer, ITextFilter
     {
+        /// <summary>
+        /// Applies this filter to the specified text.
+        /// </summary>
+        /// <param name="text">The text wrapped in a <see cref="StringBuilder" />
+        /// .</param>
+        /// <exception cref="ArgumentNullException">text</exception>
         public void Apply(StringBuilder text)
         {
             if (text is null) throw new ArgumentNullException(nameof(text));
