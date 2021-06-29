@@ -2,6 +2,7 @@
 using Embix.Core.Config;
 using Embix.MySql;
 using Embix.PgSql;
+using Embix.Plugin.Greek;
 using Fusi.Tools;
 using Microsoft.Extensions.CommandLineUtils;
 using ShellProgressBar;
@@ -149,14 +150,16 @@ namespace Embix.Commands
                 case "mysql":
                     factory = new MySqlIndexBuilderFactory(
                         LoadText(_profilePath),
-                        connString);
+                        connString,
+                        typeof(GrcRomanizerTextFilter).Assembly);
                     initializer = new MySqlTableInitializer(
                         new MySqlDbConnectionFactory(connString));
                     break;
                 case "pgsql":
                     factory = new PgSqlIndexBuilderFactory(
                         LoadText(_profilePath),
-                        connString);
+                        connString,
+                        typeof(GrcRomanizerTextFilter).Assembly);
                     initializer = new PgSqlTableInitializer(
                         new PgSqlDbConnectionFactory(connString));
                     break;

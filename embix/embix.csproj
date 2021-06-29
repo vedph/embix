@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Embix.Core\Embix.Core.csproj" />
     <ProjectReference Include="..\Embix.MySql\Embix.MySql.csproj" />
     <ProjectReference Include="..\Embix.PgSql\Embix.PgSql.csproj" />
+    <ProjectReference Include="..\Embix.Plugin.Greek\Embix.Plugin.Greek.csproj" />
   </ItemGroup>
 
 </Project>
