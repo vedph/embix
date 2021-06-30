@@ -4,6 +4,9 @@ del .\Embix.Core\bin\Debug\*.*nupkg
 del .\Embix.MySql\bin\Debug\*.*nupkg
 del .\Embix.PgSql\bin\Debug\*.*nupkg
 del .\Embix.Plugin.Greek\bin\Debug\*.*nupkg
+del .\Embix.Search\bin\Debug\*.*nupkg
+del .\Embix.Search.MySql\bin\Debug\*.*nupkg
+del .\Embix.Search.PgSql\bin\Debug\*.*nupkg
 
 cd .\Embix.Core
 dotnet pack -c Debug -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
