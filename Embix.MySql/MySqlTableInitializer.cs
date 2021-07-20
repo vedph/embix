@@ -37,7 +37,7 @@ namespace Embix.MySql
         {
             using StreamReader reader = new StreamReader(
                 Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("Embix.MySql.Assets.Schema.sql"),
+                .GetManifestResourceStream("Embix.MySql.Assets.Schema.mysql"),
                 Encoding.UTF8);
             return reader.ReadToEnd();
         }
@@ -71,7 +71,7 @@ namespace Embix.MySql
                 (MySqlConnection)_connFactory.GetConnection();
             connection.Open();
 
-            if (!TableExists("token", connection))
+            if (!TableExists("eix_token", connection))
             {
                 // https://stackoverflow.com/questions/1324693/c-mysql-ado-net-delimiter-causing-syntax-error
                 MySqlScript script = new MySqlScript(connection, GetSql());
@@ -81,8 +81,8 @@ namespace Embix.MySql
             {
                 MySqlScript script = new MySqlScript(connection,
                     "SET FOREIGN_KEY_CHECKS=0;\n" +
-                    "TRUNCATE TABLE token;\n" +
-                    "TRUNCATE TABLE occurrence;\n" +
+                    "TRUNCATE TABLE eix_token;\n" +
+                    "TRUNCATE TABLE eix_occurrence;\n" +
                     "SET FOREIGN_KEY_CHECKS=1;\n");
                 script.Execute();
             }

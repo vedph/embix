@@ -44,7 +44,7 @@ namespace Embix.Core
             // write token if any
             if (record.Token != null && ((parts & IndexRecordParts.Token) != 0))
             {
-                Query query = _queryFactory.Query("token")
+                Query query = _queryFactory.Query("eix_token")
                     .AsInsert(record.Names.TokenNames, record.Token);
                 _queryFactory.Execute(query);
             }
@@ -53,7 +53,7 @@ namespace Embix.Core
             if (record.Occurrence != null &&
                 ((parts & IndexRecordParts.Occurrence) != 0))
             {
-                Query query = _queryFactory.Query("occurrence")
+                Query query = _queryFactory.Query("eix_occurrence")
                     .AsInsert(record.Names.OccurrenceNames, record.Occurrence);
                 _queryFactory.Execute(query);
             }
@@ -80,7 +80,7 @@ namespace Embix.Core
                     .Select(r => r.Token).ToArray();
                 if (tokens.Length > 0)
                 {
-                    Query query = _queryFactory.Query("token")
+                    Query query = _queryFactory.Query("eix_token")
                         .AsInsert(records[0].Names.TokenNames, tokens);
                     _queryFactory.Execute(query);
                 }
@@ -94,7 +94,7 @@ namespace Embix.Core
                     .Select(r => r.Occurrence).ToArray();
                 if (occurrences.Length > 0)
                 {
-                    Query query = _queryFactory.Query("occurrence")
+                    Query query = _queryFactory.Query("eix_occurrence")
                         .AsInsert(records[0].Names.OccurrenceNames, occurrences);
                     _queryFactory.Execute(query);
                 }

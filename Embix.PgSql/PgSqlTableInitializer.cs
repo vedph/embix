@@ -2,7 +2,6 @@
 using Npgsql;
 using System;
 using System.Data;
-using System.Data.Common;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -31,7 +30,7 @@ namespace Embix.PgSql
         {
             using StreamReader reader = new StreamReader(
                 Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("Embix.PgSql.Assets.Schema.sql"),
+                .GetManifestResourceStream("Embix.PgSql.Assets.Schema.pgsql"),
                 Encoding.UTF8);
             return reader.ReadToEnd();
         }
@@ -59,7 +58,7 @@ namespace Embix.PgSql
                 (NpgsqlConnection)_connFactory.GetConnection();
             connection.Open();
 
-            if (!TableExists("token", connection))
+            if (!TableExists("eix_token", connection))
             {
                 NpgsqlCommand cmd = new NpgsqlCommand(GetSql(), connection);
                 cmd.ExecuteNonQuery();
@@ -67,8 +66,8 @@ namespace Embix.PgSql
             else if (clear)
             {
                 NpgsqlCommand cmd = new NpgsqlCommand(
-                    "TRUNCATE TABLE occurrence RESTART IDENTITY CASCADE;\n" +
-                    "TRUNCATE TABLE token RESTART IDENTITY CASCADE;\n", connection);
+                    "TRUNCATE TABLE eix_occurrence RESTART IDENTITY CASCADE;\n" +
+                    "TRUNCATE TABLE eix_token RESTART IDENTITY CASCADE;\n", connection);
                 cmd.ExecuteNonQuery();
             }
             connection.Close();

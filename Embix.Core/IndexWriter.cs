@@ -15,7 +15,7 @@ namespace Embix.Core
         /// <summary>
         /// The key for the language entry in token's metadata.
         /// </summary>
-        public const string META_TOKEN_ID = "tokenid";
+        public const string META_TOKEN_ID = "token_id";
 
         /// <summary>
         /// The key for the language entry in token's metadata.
@@ -25,7 +25,7 @@ namespace Embix.Core
         /// <summary>
         /// The key for the target ID entry in token's metadata.
         /// </summary>
-        public const string META_TARGET_ID = "targetid";
+        public const string META_TARGET_ID = "target_id";
 
         /// <summary>
         /// Gets or sets the optional metadata supplier to be used.
@@ -81,7 +81,7 @@ namespace Embix.Core
         {
             List<string> fields = new List<string>(new[]
             {
-                "tokenid", "field", "targetid"
+                "token_id", "field", "target_id"
             });
             fields.AddRange(Profile.MetadataFields);
             return fields.ToArray();
@@ -167,7 +167,7 @@ namespace Embix.Core
 
             object[] t = null, o = null;
 
-            // token: id, targetid, value, language
+            // token: id, target_id, value, language
             var key = BuildTokenKey(
                 GetMetadataValue<string>(META_LANGUAGE, metadata), token);
             bool isNew = !TokenIds.ContainsKey(key);
@@ -185,20 +185,20 @@ namespace Embix.Core
                 };
             }
 
-            // occurrence: (id is AI), tokenid, field, ...metadata
+            // occurrence: (id is AI), token_id, field, ...metadata
             List<object> data = new List<object>();
             data.AddRange(new object[]
             {
                 tokenId,
                 field,
-                // targetid
+                // target_id
                 GetMetadataValue(META_TARGET_ID, metadata)
             });
             Logger?.LogDebug($"  O: {tokenId} [{field}]");
             if (RecordNames.OccurrenceNames.Length > 2)
             {
                 foreach (string fld in RecordNames.OccurrenceNames
-                    .Where(f => f != "tokenid" && f != "field" && f != "targetid"))
+                    .Where(f => f != "token_id" && f != "field" && f != "target_id"))
                 {
                     object value = null;
                     if (metadata.ContainsKey(fld))

@@ -11,15 +11,15 @@
     <Authors>Daniele Fusi</Authors>
     <Company>Fusi</Company>
     <Product>Embix</Product>
-    <Version>1.0.15</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Assets\Schema.sql" />
+    <None Remove="Assets\Schema.pgsql" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Assets\Schema.sql" />
+    <EmbeddedResource Include="Assets\Schema.pgsql" />
   </ItemGroup>
 
   <ItemGroup>

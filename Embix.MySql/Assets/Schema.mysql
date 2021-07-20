@@ -1,0 +1,23 @@
+﻿-- token
+
+CREATE TABLE `eix_token` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `value` varchar(100) NOT NULL,
+  `language` varchar(5) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `eix_token_value_idx` (`value`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- occurrence
+
+CREATE TABLE `eix_occurrence` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `token_id` int NOT NULL,
+  `field` char(5) NOT NULL,
+  `target_id` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `eix_occurrence_fk` (`token_id`),
+  KEY `eix_occurrence_field_idx` (`field`) USING BTREE,
+  KEY `eix_occ_target_id_idx` (`target_id`) USING BTREE,
+  CONSTRAINT `eix_occurrence_fk` FOREIGN KEY (`token_id`) REFERENCES `eix_token` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

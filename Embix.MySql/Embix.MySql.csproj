@@ -8,18 +8,18 @@
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <Version>1.0.19</Version>
+    <Version>1.1.0</Version>
     <Authors>Daniele Fusi</Authors>
     <Company>Fusi</Company>
     <Product>Embix</Product>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Assets\Schema.sql" />
+    <None Remove="Assets\Schema.mysql" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Assets\Schema.sql" />
+    <EmbeddedResource Include="Assets\Schema.mysql" />
   </ItemGroup>
 
   <ItemGroup>
