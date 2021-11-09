@@ -320,3 +320,7 @@ hex,dec,cat,glyph,freq
 "1F00",7936,Ll,ἀ,13
 "2014",8212,Pd,—,134
 ```
+
+## History
+
+2021-11-09: upgraded to .NET 6.
