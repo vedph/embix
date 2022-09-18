@@ -91,7 +91,7 @@ namespace Embix.Core.Config
                     var entries = ComponentFactoryConfigEntry.ReadComponentEntries(
                         Configuration,
                         $"FilterChains:{index}:Filters");
-                    return GetComponents<ITextFilter>(entries, true, true);
+                    return GetComponents<ITextFilter>(entries);
                 }
                 index++;
             }

@@ -45,7 +45,7 @@ namespace Embix.Search.Test
             Query query = new Query("x");
             builder.AddClause(query, "t", "*=", "abc");
             string sql = GetSql(query);
-            Assert.Equal("SELECT * FROM \"x\" WHERE LOWER(\"t\") like '%abc%'", sql);
+            Assert.Equal("SELECT * FROM \"x\" WHERE \"t\" ilike '%abc%'", sql);
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Embix.Search.Test
             Query query = new Query("x");
             builder.AddClause(query, "t", "^=", "abc");
             string sql = GetSql(query);
-            Assert.Equal("SELECT * FROM \"x\" WHERE LOWER(\"t\") like 'abc%'", sql);
+            Assert.Equal("SELECT * FROM \"x\" WHERE \"t\" ilike 'abc%'", sql);
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace Embix.Search.Test
             Query query = new Query("x");
             builder.AddClause(query, "t", "$=", "abc");
             string sql = GetSql(query);
-            Assert.Equal("SELECT * FROM \"x\" WHERE LOWER(\"t\") like '%abc'", sql);
+            Assert.Equal("SELECT * FROM \"x\" WHERE \"t\" ilike '%abc'", sql);
         }
 
         [Fact]
@@ -75,7 +75,7 @@ namespace Embix.Search.Test
             Query query = new Query("x");
             builder.AddClause(query, "t", "?=", "a?c");
             string sql = GetSql(query);
-            Assert.Equal("SELECT * FROM \"x\" WHERE LOWER(\"t\") like 'a_c'", sql);
+            Assert.Equal("SELECT * FROM \"x\" WHERE \"t\" ilike 'a_c'", sql);
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace Embix.Search.Test
             Query query = new Query("x");
             builder.AddClause(query, "t", "?=", "a*c");
             string sql = GetSql(query);
-            Assert.Equal("SELECT * FROM \"x\" WHERE LOWER(\"t\") like 'a%c'", sql);
+            Assert.Equal("SELECT * FROM \"x\" WHERE \"t\" ilike 'a%c'", sql);
         }
 
         [Fact]

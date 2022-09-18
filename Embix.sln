@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31229.75
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Embix.Core", "Embix.Core\Embix.Core.csproj", "{BA1FDC27-2A55-4991-AF35-6A1031505AD6}"
 EndProject
@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		flow.png = flow.png
 		Pack.bat = Pack.bat
+		Push.bat = Push.bat
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -24,13 +25,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Embix.Plugin.Greek", "Embix
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Embix.Plugin.Greek.Test", "Embix.Plugin.Greek.Test\Embix.Plugin.Greek.Test.csproj", "{ABDFBF72-095E-43B6-8BAA-3D955F31A347}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Embix.Search", "Embix.Search\Embix.Search.csproj", "{F99FCE68-ED45-4FF0-BC55-B27F403931DC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Embix.Search", "Embix.Search\Embix.Search.csproj", "{F99FCE68-ED45-4FF0-BC55-B27F403931DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Embix.Search.Test", "Embix.Search.Test\Embix.Search.Test.csproj", "{19AF7908-3784-45F4-BB15-6A70DDD9F4C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Embix.Search.Test", "Embix.Search.Test\Embix.Search.Test.csproj", "{19AF7908-3784-45F4-BB15-6A70DDD9F4C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Embix.Search.MySql", "Embix.Search.MySql\Embix.Search.MySql.csproj", "{EF5693FD-0DF5-4638-B0F0-111EAC7B6A61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Embix.Search.MySql", "Embix.Search.MySql\Embix.Search.MySql.csproj", "{EF5693FD-0DF5-4638-B0F0-111EAC7B6A61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Embix.Search.PgSql", "Embix.Search.PgSql\Embix.Search.PgSql.csproj", "{9C552E89-8B4B-4F76-8A61-D27B63D323F4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Embix.Search.PgSql", "Embix.Search.PgSql\Embix.Search.PgSql.csproj", "{9C552E89-8B4B-4F76-8A61-D27B63D323F4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

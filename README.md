@@ -323,4 +323,10 @@ hex,dec,cat,glyph,freq
 
 ## History
 
+### 1.2.0
+
+2022-09-18: updated packages.
+
+### 1.1.0
+
 2021-11-09: upgraded to .NET 6.
