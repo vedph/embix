@@ -4,34 +4,33 @@ using System.Linq;
 using System.Text;
 using Xunit;
 
-namespace Embix.Core.Test
+namespace Embix.Core.Test;
+
+public sealed class StandardStringTokenizerTest
 {
-    public sealed class StandardStringTokenizerTest
+    [Theory]
+    [InlineData(null, "")]
+    [InlineData("", "")]
+    [InlineData("  ", "")]
+    [InlineData("One", "one")]
+    [InlineData("One, Two! ", "one two")]
+    [InlineData("it's true!", "it s true")]
+    public void Tokenize(string text, string expected)
     {
-        [Theory]
-        [InlineData(null, "")]
-        [InlineData("", "")]
-        [InlineData("  ", "")]
-        [InlineData("One", "one")]
-        [InlineData("One, Two! ", "one two")]
-        [InlineData("it's true!", "it s true")]
-        public void Tokenize(string text, string expected)
+        var tokenizer = new StandardStringTokenizer
         {
-            var tokenizer = new StandardStringTokenizer
-            {
-                Filter = new CompositeTextFilter(
-                    new WhitespaceTextFilter(),
-                    new StandardTextFilter())
-            };
+            Filter = new CompositeTextFilter(
+                new WhitespaceTextFilter(),
+                new StandardTextFilter())
+        };
 
-            string[] actTokens = tokenizer.Tokenize(
-                new StringBuilder(text)).ToArray();
-            string[] expTokens = expected.Length == 0
-                ? Array.Empty<string>() : expected.Split();
+        string[] actTokens = tokenizer.Tokenize(
+            new StringBuilder(text)).ToArray();
+        string[] expTokens = expected.Length == 0
+            ? Array.Empty<string>() : expected.Split();
 
-            Assert.Equal(expTokens.Length, actTokens.Length);
-            for (int i = 0; i < expTokens.Length; i++)
-                Assert.Equal(expTokens[i], actTokens[i]);
-        }
+        Assert.Equal(expTokens.Length, actTokens.Length);
+        for (int i = 0; i < expTokens.Length; i++)
+            Assert.Equal(expTokens[i], actTokens[i]);
     }
 }

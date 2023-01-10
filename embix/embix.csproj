@@ -9,7 +9,7 @@
     <Authors>Daniele Fusi</Authors>
     <Company>Fusi</Company>
     <Description>Simple RDBMS embedded index builder. This builds a minimalist text index from some tables and fields of a RDBMS DB, by applying a set of filters before and after tokenization.</Description>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

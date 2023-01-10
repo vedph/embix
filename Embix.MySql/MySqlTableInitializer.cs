@@ -7,86 +7,87 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 
-namespace Embix.MySql
+namespace Embix.MySql;
+
+/// <summary>
+/// MySql table initializer.
+/// </summary>
+/// <seealso cref="ITableInitializer" />
+public class MySqlTableInitializer : ITableInitializer
 {
+    private readonly IDbConnectionFactory _connFactory;
+
     /// <summary>
-    /// MySql table initializer.
+    /// Initializes a new instance of the <see cref="MySqlTableInitializer"/>
+    /// class.
     /// </summary>
-    /// <seealso cref="ITableInitializer" />
-    public class MySqlTableInitializer : ITableInitializer
+    /// <param name="factory">The factory.</param>
+    /// <exception cref="ArgumentNullException">factory</exception>
+    public MySqlTableInitializer(IDbConnectionFactory factory)
     {
-        private readonly IDbConnectionFactory _connFactory;
+        _connFactory = factory
+            ?? throw new ArgumentNullException(nameof(factory));
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MySqlTableInitializer"/>
-        /// class.
-        /// </summary>
-        /// <param name="factory">The factory.</param>
-        /// <exception cref="ArgumentNullException">factory</exception>
-        public MySqlTableInitializer(IDbConnectionFactory factory)
+    /// <summary>
+    /// Gets the SQL code for tables definition.
+    /// </summary>
+    /// <returns>SQL code.</returns>
+    protected virtual string GetSql()
+    {
+        using StreamReader reader = new(
+            Assembly.GetExecutingAssembly()
+            .GetManifestResourceStream("Embix.MySql.Assets.Schema.mysql")!,
+            Encoding.UTF8);
+        return reader.ReadToEnd();
+    }
+
+    private static bool TableExists(string table, IDbConnection connection)
+    {
+        DbConnectionStringBuilder builder = new()
         {
-            _connFactory = factory
-                ?? throw new ArgumentNullException(nameof(factory));
-        }
+            ConnectionString = connection.ConnectionString
+        };
+        string databaseName = builder["Database"] as string;
 
-        /// <summary>
-        /// Gets the SQL code for tables definition.
-        /// </summary>
-        /// <returns>SQL code.</returns>
-        protected virtual string GetSql()
+        IDbCommand cmd = connection.CreateCommand();
+        // https://stackoverflow.com/questions/464474/check-if-a-sql-table-exists
+        cmd.CommandText = "SELECT CASE WHEN EXISTS(" +
+            "(SELECT * FROM information_schema.tables " +
+            $"WHERE table_name = '{table}' AND table_schema='{databaseName}')" +
+            ") THEN 1 ELSE 0 END;";
+        long n = (long)cmd.ExecuteScalar();
+        return n == 1;
+    }
+
+    /// <summary>
+    /// Initializes the database index tables by creating them if not
+    /// present; if the tables are already present and <paramref name="clear" />
+    /// is true, they are truncated.
+    /// </summary>
+    /// <param name="clear">if set to <c>true</c>, truncate the index
+    /// tables when present.</param>
+    public void Initialize(bool clear)
+    {
+        using MySqlConnection connection =
+            (MySqlConnection)_connFactory.GetConnection();
+        connection.Open();
+
+        if (!TableExists("eix_token", connection))
         {
-            using StreamReader reader = new StreamReader(
-                Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("Embix.MySql.Assets.Schema.mysql"),
-                Encoding.UTF8);
-            return reader.ReadToEnd();
+            // https://stackoverflow.com/questions/1324693/c-mysql-ado-net-delimiter-causing-syntax-error
+            MySqlScript script = new(connection, GetSql());
+            script.Execute();
         }
-
-        private static bool TableExists(string table, IDbConnection connection)
+        else if (clear)
         {
-            DbConnectionStringBuilder builder = new DbConnectionStringBuilder();
-            builder.ConnectionString = connection.ConnectionString;
-            string databaseName = builder["Database"] as string;
-
-            IDbCommand cmd = connection.CreateCommand();
-            // https://stackoverflow.com/questions/464474/check-if-a-sql-table-exists
-            cmd.CommandText = "SELECT CASE WHEN EXISTS(" +
-                "(SELECT * FROM information_schema.tables " +
-                $"WHERE table_name = '{table}' AND table_schema='{databaseName}')" +
-                ") THEN 1 ELSE 0 END;";
-            long n = (long)cmd.ExecuteScalar();
-            return n == 1;
+            MySqlScript script = new(connection,
+                "SET FOREIGN_KEY_CHECKS=0;\n" +
+                "TRUNCATE TABLE eix_token;\n" +
+                "TRUNCATE TABLE eix_occurrence;\n" +
+                "SET FOREIGN_KEY_CHECKS=1;\n");
+            script.Execute();
         }
-
-        /// <summary>
-        /// Initializes the database index tables by creating them if not
-        /// present; if the tables are already present and <paramref name="clear" />
-        /// is true, they are truncated.
-        /// </summary>
-        /// <param name="clear">if set to <c>true</c>, truncate the index
-        /// tables when present.</param>
-        public void Initialize(bool clear)
-        {
-            using MySqlConnection connection =
-                (MySqlConnection)_connFactory.GetConnection();
-            connection.Open();
-
-            if (!TableExists("eix_token", connection))
-            {
-                // https://stackoverflow.com/questions/1324693/c-mysql-ado-net-delimiter-causing-syntax-error
-                MySqlScript script = new MySqlScript(connection, GetSql());
-                script.Execute();
-            }
-            else if (clear)
-            {
-                MySqlScript script = new MySqlScript(connection,
-                    "SET FOREIGN_KEY_CHECKS=0;\n" +
-                    "TRUNCATE TABLE eix_token;\n" +
-                    "TRUNCATE TABLE eix_occurrence;\n" +
-                    "SET FOREIGN_KEY_CHECKS=1;\n");
-                script.Execute();
-            }
-            connection.Close();
-        }
+        connection.Close();
     }
 }

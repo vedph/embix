@@ -2,21 +2,20 @@
 using System.Text;
 using Xunit;
 
-namespace Embix.Core.Test.Filters
+namespace Embix.Core.Test.Filters;
+
+public sealed class SeparatorTextFilterTest
 {
-    public sealed class SeparatorTextFilterTest
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("Hello world", "Hello world")]
+    [InlineData("one/uno", "one uno")]
+    [InlineData("one,uno,heis", "one uno heis")]
+    public void Apply(string text, string expected)
     {
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("Hello world", "Hello world")]
-        [InlineData("one/uno", "one uno")]
-        [InlineData("one,uno,heis", "one uno heis")]
-        public void Apply(string text, string expected)
-        {
-            SeparatorTextFilter filter = new SeparatorTextFilter();
-            StringBuilder sb = new StringBuilder(text);
-            filter.Apply(sb);
-            Assert.Equal(expected, sb.ToString());
-        }
+        SeparatorTextFilter filter = new();
+        StringBuilder sb = new(text);
+        filter.Apply(sb);
+        Assert.Equal(expected, sb.ToString());
     }
 }

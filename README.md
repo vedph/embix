@@ -323,6 +323,15 @@ hex,dec,cat,glyph,freq
 
 ## History
 
+### 1.2.2
+
+- 2023-01-10: added `CalculatePartitionCount` to `IndexBuilder` to allow clients setup their UI.
+
+### 1.2.1
+
+- 2023-01-10:
+  - added nullability to projects.
+  - updated packages.
 - 2022-11-09: upgraded to NET 7.
 
 ### 1.2.0

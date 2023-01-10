@@ -1,17 +1,16 @@
 ﻿using Fusi.Text.Unicode;
 
-namespace Embix.Core
-{
-    internal static class TextFilterHelper
-    {
-        private static UniData _ud;
+namespace Embix.Core;
 
-        public static UniData UniData
+internal static class TextFilterHelper
+{
+    private static UniData? _ud;
+
+    public static UniData UniData
+    {
+        get
         {
-            get
-            {
-                return _ud ?? (_ud = new UniData());
-            }
+            return _ud ??= new UniData();
         }
     }
 }

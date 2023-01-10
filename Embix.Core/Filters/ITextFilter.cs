@@ -1,17 +1,16 @@
 ﻿using System.Text;
 
-namespace Embix.Core.Filters
+namespace Embix.Core.Filters;
+
+/// <summary>
+/// A text filter for indexing.
+/// </summary>
+public interface ITextFilter
 {
     /// <summary>
-    /// A text filter for indexing.
+    /// Applies this filter to the specified text.
     /// </summary>
-    public interface ITextFilter
-    {
-        /// <summary>
-        /// Applies this filter to the specified text.
-        /// </summary>
-        /// <param name="text">The text wrapped in a <see cref="StringBuilder"/>.
-        /// </param>
-        void Apply(StringBuilder text);
-    }
+    /// <param name="text">The text wrapped in a <see cref="StringBuilder"/>.
+    /// </param>
+    void Apply(StringBuilder text);
 }

@@ -122,7 +122,7 @@ namespace Embix.Commands
 
         internal static string LoadText(string path)
         {
-            using (StreamReader reader = new StreamReader(path, Encoding.UTF8))
+            using (StreamReader reader = new(path, Encoding.UTF8))
             {
                 return reader.ReadToEnd();
             }
@@ -170,46 +170,44 @@ namespace Embix.Commands
 
             initializer.Initialize(_clear);
 
-            ProgressBar mainBar = new ProgressBar(100, null, new ProgressBarOptions
+            ProgressBar mainBar = new(100, null, new ProgressBarOptions
             {
                 DisplayTimeInRealTime = true,
                 EnableTaskBarProgress = true
             });
-            ProgressBarOptions childBarOptionns = new ProgressBarOptions
+            ProgressBarOptions childBarOptions = new()
             {
                 DisplayTimeInRealTime = false,
                 CollapseWhenFinished = true
             };
             Dictionary<string, ChildProgressBar> childBars =
-                new Dictionary<string, ChildProgressBar>();
-            Regex r = new Regex(@"^\[([^]]+)\]", RegexOptions.Compiled);
+                new();
+            Regex r = new(@"^\[([^]]+)\]", RegexOptions.Compiled);
 
-            foreach (DocumentDefinition document in factory.Profile.Documents)
+            foreach (DocumentDefinition document in factory.Profile.GetDocuments())
             {
-                using (IndexBuilder builder = factory.GetBuilder(null, _options.Logger))
-                {
-                    builder.PartitionCount = _partitionCount;
-                    builder.MinPartitionSize = _minPartitionSize;
-                    builder.RecordLimit = _recordLimit;
+                using IndexBuilder builder = factory.GetBuilder(null, _options.Logger);
+                builder.PartitionCount = _partitionCount;
+                builder.MinPartitionSize = _minPartitionSize;
+                builder.RecordLimit = _recordLimit;
 
-                    await builder.BuildAsync(document.Id, CancellationToken.None,
-                        new Progress<ProgressReport>(report =>
+                await builder.BuildAsync(document.Id, CancellationToken.None,
+                    new Progress<ProgressReport>(report =>
+                    {
+                        IProgressBar bar = mainBar;
+                        Match m = r.Match(report.Message ?? "");
+                        if (m.Success)
                         {
-                            IProgressBar bar = mainBar;
-                            Match m = r.Match(report.Message ?? "");
-                            if (m.Success)
+                            if (!childBars.ContainsKey(m.Groups[1].Value))
                             {
-                                if (!childBars.ContainsKey(m.Groups[1].Value))
-                                {
-                                    childBars[m.Groups[1].Value] =
-                                        mainBar.Spawn(100, m.Groups[1].Value,
-                                            childBarOptionns);
-                                }
-                                bar = childBars[m.Groups[1].Value];
+                                childBars[m.Groups[1].Value] =
+                                    mainBar.Spawn(100, m.Groups[1].Value,
+                                        childBarOptions);
                             }
-                            bar.Tick(report.Percent, report.Message);
-                        }));
-                }
+                            bar = childBars[m.Groups[1].Value];
+                        }
+                        bar.Tick(report.Percent, report.Message);
+                    }));
             }
         }
     }

@@ -30,12 +30,12 @@ namespace Embix.Core
         /// <summary>
         /// Gets or sets the optional metadata supplier to be used.
         /// </summary>
-        public IMetadataSupplier MetadataSupplier { get; set; }
+        public IMetadataSupplier? MetadataSupplier { get; set; }
 
         /// <summary>
         /// Gets or sets the optional logger.
         /// </summary>
-        public ILogger Logger { get; set; }
+        public ILogger? Logger { get; set; }
 
         /// <summary>
         /// Gets the list of fields building up a token and occurrence record.
@@ -50,7 +50,7 @@ namespace Embix.Core
         /// <summary>
         /// Gets or sets the automatic number generator.
         /// </summary>
-        protected IAutoNumber AutoNumber { get; set; }
+        protected IAutoNumber? AutoNumber { get; set; }
 
         /// <summary>
         /// Gets the token language + value to token ID map. This is used to
@@ -79,7 +79,7 @@ namespace Embix.Core
 
         private string[] GetOccurrenceFields()
         {
-            List<string> fields = new List<string>(new[]
+            List<string> fields = new(new[]
             {
                 "token_id", "field", "target_id"
             });
@@ -109,25 +109,25 @@ namespace Embix.Core
         {
             if (!TokenIds.ContainsKey(key))
             {
-                int id = AutoNumber.GetNextId();
+                int id = AutoNumber!.GetNextId();
                 TokenIds[key] = id;
                 Logger?.LogDebug($"New token {key.Item1}.{key.Item2}: {id}");
             }
             return TokenIds[key];
         }
 
-        private static object GetMetadataValue(
+        private static object? GetMetadataValue(
             string key,
-            IDictionary<string, object> metadata)
+            IDictionary<string, object>? metadata)
         {
-            return metadata.ContainsKey(key) ? metadata[key] : null;
+            return metadata?.ContainsKey(key) == true? metadata[key] : null;
         }
 
-        private static T GetMetadataValue<T>(
+        private static T? GetMetadataValue<T>(
             string key,
-            IDictionary<string, object> metadata)
+            IDictionary<string, object>? metadata)
         {
-            return metadata.ContainsKey(key) ? (T)metadata[key] : default;
+            return metadata?.ContainsKey(key) == true ? (T)metadata[key] : default;
         }
 
         private string GetSafeLengthString(bool token, string name, string value)
@@ -144,7 +144,7 @@ namespace Embix.Core
                 Logger?.LogError(
                     $"Value for {(token ? "token" : "occurrence")}.{name} " +
                     $"has length {value.Length} > max ({lengths[name]}): \"{value}\"");
-                return value.Substring(0, lengths[name]);
+                return value[..lengths[name]];
             }
             return value;
         }
@@ -161,15 +161,15 @@ namespace Embix.Core
         protected IndexRecord GetTokenRecord(string documentId,
             string field,
             string token,
-            IDictionary<string, object> metadata)
+            IDictionary<string, object>? metadata)
         {
             MetadataSupplier?.Supply(documentId, field, token, metadata);
 
-            object[] t = null, o = null;
+            object[]? t = null, o = null;
 
             // token: id, target_id, value, language
             var key = BuildTokenKey(
-                GetMetadataValue<string>(META_LANGUAGE, metadata), token);
+                GetMetadataValue<string>(META_LANGUAGE, metadata) ?? "", token);
             bool isNew = !TokenIds.ContainsKey(key);
             int tokenId = GetTokenId(key);
             if (isNew)
@@ -186,28 +186,28 @@ namespace Embix.Core
             }
 
             // occurrence: (id is AI), token_id, field, ...metadata
-            List<object> data = new List<object>();
+            List<object> data = new();
             data.AddRange(new object[]
             {
                 tokenId,
                 field,
                 // target_id
-                GetMetadataValue(META_TARGET_ID, metadata)
+                GetMetadataValue(META_TARGET_ID, metadata) ?? ""
             });
             Logger?.LogDebug($"  O: {tokenId} [{field}]");
-            if (RecordNames.OccurrenceNames.Length > 2)
+            if (RecordNames.OccurrenceNames.Count > 2)
             {
                 foreach (string fld in RecordNames.OccurrenceNames
                     .Where(f => f != "token_id" && f != "field" && f != "target_id"))
                 {
-                    object value = null;
-                    if (metadata.ContainsKey(fld))
+                    object? value = null;
+                    if (metadata?.ContainsKey(fld) == true)
                     {
                         value = metadata[fld] is string
                             ? GetSafeLengthString(false, fld, (string)metadata[fld])
                             : metadata[fld];
                     }
-                    data.Add(value);
+                    data.Add(value!);
                 }
             }
             o = data.ToArray();

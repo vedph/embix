@@ -1,16 +1,15 @@
 ﻿using System.Data;
 
-namespace Embix.Core
+namespace Embix.Core;
+
+/// <summary>
+/// A connection factory interface.
+/// </summary>
+public interface IDbConnectionFactory
 {
     /// <summary>
-    /// A connection factory interface.
+    /// Gets a new connection to the database.
     /// </summary>
-    public interface IDbConnectionFactory
-    {
-        /// <summary>
-        /// Gets a new connection to the database.
-        /// </summary>
-        /// <returns>Connection.</returns>
-        IDbConnection GetConnection();
-    }
+    /// <returns>Connection.</returns>
+    IDbConnection GetConnection();
 }

@@ -93,13 +93,13 @@ namespace Embix.Commands
                     throw new ArgumentException("Invalid db type: " + _dbType);
             }
 
-            ProgressBar bar = new ProgressBar(100, null, new ProgressBarOptions
+            ProgressBar bar = new(100, null, new ProgressBarOptions
             {
                 DisplayTimeInRealTime = true,
                 EnableTaskBarProgress = true
             });
 
-            CharInspector inspector = new CharInspector(factory);
+            CharInspector inspector = new(factory);
             inspector.Inspect(BuildIndexCommand.LoadText(_profilePath),
                 CancellationToken.None,
                 new Progress<ProgressReport>(report =>
@@ -108,7 +108,7 @@ namespace Embix.Commands
                 }));
 
             // save
-            using (StreamWriter writer = new StreamWriter(_outputPath, false,
+            using (StreamWriter writer = new(_outputPath, false,
                 Encoding.UTF8))
             {
                 inspector.SaveCsv(writer);

@@ -3,28 +3,27 @@ using SqlKata.Compilers;
 using System;
 using System.Reflection;
 
-namespace Embix.MySql
+namespace Embix.MySql;
+
+/// <summary>
+/// MySql index builder factory.
+/// </summary>
+/// <seealso cref="IndexBuilderFactory" />
+public sealed class MySqlIndexBuilderFactory : IndexBuilderFactory
 {
     /// <summary>
-    /// MySql index builder factory.
+    /// Initializes a new instance of the <see cref="MySqlIndexBuilderFactory"/>
+    /// class.
     /// </summary>
-    /// <seealso cref="IndexBuilderFactory" />
-    public sealed class MySqlIndexBuilderFactory : IndexBuilderFactory
+    /// <param name="profile">The profile code.</param>
+    /// <param name="connString">The connection string.</param>
+    /// <exception cref="ArgumentNullException">connString</exception>
+    public MySqlIndexBuilderFactory(string profile, string connString,
+        params Assembly[] additionalAssemblies)
+        : base(profile,
+              new MySqlDbConnectionFactory(connString),
+              new MySqlCompiler(),
+              additionalAssemblies)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MySqlIndexBuilderFactory"/>
-        /// class.
-        /// </summary>
-        /// <param name="profile">The profile code.</param>
-        /// <param name="connString">The connection string.</param>
-        /// <exception cref="ArgumentNullException">connString</exception>
-        public MySqlIndexBuilderFactory(string profile, string connString,
-            params Assembly[] additionalAssemblies)
-            : base(profile,
-                  new MySqlDbConnectionFactory(connString),
-                  new MySqlCompiler(),
-                  additionalAssemblies)
-        {
-        }
     }
 }

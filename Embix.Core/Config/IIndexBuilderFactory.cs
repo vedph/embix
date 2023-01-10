@@ -31,6 +31,6 @@ namespace Embix.Core.Config
         /// index writer.</param>
         /// <param name="logger">The optional logger.</param>
         /// <returns>Builder.</returns>
-        IndexBuilder GetBuilder(IMetadataSupplier supplier, ILogger logger);
+        IndexBuilder GetBuilder(IMetadataSupplier? supplier, ILogger? logger);
     }
 }

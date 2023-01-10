@@ -3,28 +3,27 @@ using System;
 using SqlKata.Compilers;
 using System.Reflection;
 
-namespace Embix.PgSql
+namespace Embix.PgSql;
+
+/// <summary>
+/// PostgreSql index builder factory.
+/// </summary>
+/// <seealso cref="IndexBuilderFactory" />
+public sealed class PgSqlIndexBuilderFactory : IndexBuilderFactory
 {
     /// <summary>
-    /// PostgreSql index builder factory.
+    /// Initializes a new instance of the <see cref="PgSqlIndexBuilderFactory"/>
+    /// class.
     /// </summary>
-    /// <seealso cref="IndexBuilderFactory" />
-    public sealed class PgSqlIndexBuilderFactory : IndexBuilderFactory
+    /// <param name="profile">The profile code.</param>
+    /// <param name="connString">The connection string.</param>
+    /// <exception cref="ArgumentNullException">connString</exception>
+    public PgSqlIndexBuilderFactory(string profile, string connString,
+        params Assembly[] additionalAssemblies)
+        : base(profile,
+              new PgSqlDbConnectionFactory(connString),
+              new PostgresCompiler(),
+              additionalAssemblies)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PgSqlIndexBuilderFactory"/>
-        /// class.
-        /// </summary>
-        /// <param name="profile">The profile code.</param>
-        /// <param name="connString">The connection string.</param>
-        /// <exception cref="ArgumentNullException">connString</exception>
-        public PgSqlIndexBuilderFactory(string profile, string connString,
-            params Assembly[] additionalAssemblies)
-            : base(profile,
-                  new PgSqlDbConnectionFactory(connString),
-                  new PostgresCompiler(),
-                  additionalAssemblies)
-        {
-        }
     }
 }

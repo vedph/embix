@@ -2,22 +2,21 @@
 using System.Text;
 using Xunit;
 
-namespace Embix.Core.Test.Filters
+namespace Embix.Core.Test.Filters;
+
+public sealed class StandardTextFilterTest
 {
-    public sealed class StandardTextFilterTest
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("HeLlO", "hello")]
+    [InlineData("héllò", "hello")]
+    [InlineData("ma'al", "ma'al")]
+    [InlineData("\"ab12-c!\"", "ab12c")]
+    public void Apply(string text, string expected)
     {
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("HeLlO", "hello")]
-        [InlineData("héllò", "hello")]
-        [InlineData("ma'al", "ma'al")]
-        [InlineData("\"ab12-c!\"", "ab12c")]
-        public void Apply(string text, string expected)
-        {
-            StandardTextFilter filter = new StandardTextFilter();
-            StringBuilder sb = new StringBuilder(text);
-            filter.Apply(sb);
-            Assert.Equal(expected, sb.ToString());
-        }
+        StandardTextFilter filter = new();
+        StringBuilder sb = new(text);
+        filter.Apply(sb);
+        Assert.Equal(expected, sb.ToString());
     }
 }
