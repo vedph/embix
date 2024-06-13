@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Authors>Daniele Fusi</Authors>
     <Company>Fusi</Company>
     <Product>Embix</Product>
@@ -11,17 +11,17 @@
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <Version>1.2.2</Version>
-    <AssemblyVersion>1.2.2</AssemblyVersion>
-    <FileVersion>1.2.2</FileVersion>
+    <Version>3.0.0</Version>
+    <AssemblyVersion>3.0.0</AssemblyVersion>
+    <FileVersion>3.0.0</FileVersion>
 	<Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fusi.Microsoft.Extensions.Configuration.InMemoryJson" Version="2.0.0" />
-    <PackageReference Include="Fusi.Text" Version="3.0.0" />
-    <PackageReference Include="Fusi.Tools" Version="3.0.0" />
-    <PackageReference Include="Fusi.Tools.Config" Version="3.0.0" />
+    <PackageReference Include="Fusi.Microsoft.Extensions.Configuration.InMemoryJson" Version="3.0.1" />
+    <PackageReference Include="Fusi.Text" Version="4.0.1" />
+    <PackageReference Include="Fusi.Tools" Version="5.0.0" />
+    <PackageReference Include="Fusi.Tools.Config" Version="5.0.0" />
     <PackageReference Include="SqlKata" Version="2.4.0" />
     <PackageReference Include="SqlKata.Execution" Version="2.4.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />

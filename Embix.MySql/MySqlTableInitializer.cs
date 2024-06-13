@@ -48,7 +48,8 @@ public class MySqlTableInitializer : ITableInitializer
         {
             ConnectionString = connection.ConnectionString
         };
-        string databaseName = builder["Database"] as string;
+        string? databaseName = builder["Database"] as string;
+        if (databaseName == null) return false;
 
         IDbCommand cmd = connection.CreateCommand();
         // https://stackoverflow.com/questions/464474/check-if-a-sql-table-exists
@@ -56,8 +57,8 @@ public class MySqlTableInitializer : ITableInitializer
             "(SELECT * FROM information_schema.tables " +
             $"WHERE table_name = '{table}' AND table_schema='{databaseName}')" +
             ") THEN 1 ELSE 0 END;";
-        long n = (long)cmd.ExecuteScalar();
-        return n == 1;
+        long? n = (long?)cmd.ExecuteScalar();
+        return n != null && n == 1;
     }
 
     /// <summary>

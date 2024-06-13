@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <NeutralLanguage>en-US</NeutralLanguage>
     <Description>Simple RDBMS embedded index searcher helpers for MySql</Description>
     <Copyright>by Daniele Fusi</Copyright>
@@ -11,14 +11,14 @@
     <Authors>Daniele Fusi</Authors>
     <Company>Fusi</Company>
     <Product>Embix</Product>
-    <Version>1.2.2</Version>
-    <FileVersion>1.2.2</FileVersion>
-    <AssemblyVersion>1.2.2</AssemblyVersion>
+    <Version>3.0.0</Version>
+    <FileVersion>3.0.0</FileVersion>
+    <AssemblyVersion>3.0.0</AssemblyVersion>
 	  <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MySql.Data" Version="8.0.31" />
+    <PackageReference Include="MySql.Data" Version="8.4.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -323,6 +323,10 @@ hex,dec,cat,glyph,freq
 
 ## History
 
+### 3.0.0
+
+- 2024-06-13: upgraded to NET 8.
+
 ### 1.2.2
 
 - 2023-01-10: added `CalculatePartitionCount` to `IndexBuilder` to allow clients setup their UI.
