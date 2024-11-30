@@ -2,7 +2,7 @@
 
 This solution is work in progress. It provides a set of components you can use to build a very simple words index embedded in a relational database, ready for your searches.
 
-This project is part of the [Cadmus system](https://github.com/vedph/cadmus_doc), but it stands out as an independent tool. In the context of the Cadmus system, it has been designed to integrate in a wider environment with a number of different usages. The most relevant one at this time is providing text indexes for RDBMS systems which should feed standalone API wrappers around third party resources. In turn, these API services would then be consumed (among others) by Cadmus editors.
+This project is part of the [Cadmus system](https://myrmex.github.io/overview/cadmus), but it stands out as an independent tool. In the context of the Cadmus system, it has been designed to integrate in a wider environment with a number of different usages. The most relevant one at this time is providing text indexes for RDBMS systems which should feed standalone API wrappers around third party resources. In turn, these API services would then be consumed (among others) by Cadmus editors.
 
 For instance, say you want to add data about a place in your Cadmus database; you might want to have a geographic data part which allows you to lookup some gazetteers and find the desired location, with all its metadata and identifiers. To this end, if the gazetteer does not provide its own public web API, I'd like to create one wrapping its data, with the search functions I want to include. As a part of this, I'd need to build an index of place names and of all the relevant words connected to them, directly inside my geographic database. Of course, this implies a number of preprocessing steps to get a more efficient search, capable of finding variants, stripping out noise features from names, dropping stopwords, transliterating non-romanized names, etc.
 
@@ -322,6 +322,10 @@ hex,dec,cat,glyph,freq
 ```
 
 ## History
+
+### 4.0.0
+
+- 2024-11-30: upgraded to NET 9.
 
 ### 3.0.0
 
