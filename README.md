@@ -323,6 +323,10 @@ hex,dec,cat,glyph,freq
 
 ## History
 
+### 4.0.1
+
+- 2025-02-04: updated packages.
+
 ### 4.0.0
 
 - 2024-11-30: upgraded to NET 9.

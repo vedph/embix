@@ -11,9 +11,9 @@
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <Version>4.0.0</Version>
-    <FileVersion>4.0.0</FileVersion>
-    <AssemblyVersion>4.0.0</AssemblyVersion>
+    <Version>4.0.1</Version>
+    <FileVersion>4.0.1</FileVersion>
+    <AssemblyVersion>4.0.1</AssemblyVersion>
 	<Nullable>enable</Nullable>
   </PropertyGroup>
 

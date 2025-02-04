@@ -11,14 +11,14 @@
     <Authors>Daniele Fusi</Authors>
     <Company>Fusi</Company>
     <Product>Embix</Product>
-    <Version>4.0.0</Version>
-    <FileVersion>4.0.0</FileVersion>
-    <AssemblyVersion>4.0.0</AssemblyVersion>
+    <Version>4.0.1</Version>
+    <FileVersion>4.0.1</FileVersion>
+    <AssemblyVersion>4.0.1</AssemblyVersion>
 	  <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MySql.Data" Version="9.1.0" />
+    <PackageReference Include="MySql.Data" Version="9.2.0" />
   </ItemGroup>
 
   <ItemGroup>

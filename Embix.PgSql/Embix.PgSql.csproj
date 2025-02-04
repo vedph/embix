@@ -11,9 +11,9 @@
     <Authors>Daniele Fusi</Authors>
     <Company>Fusi</Company>
     <Product>Embix</Product>
-    <Version>4.0.0</Version>
-    <FileVersion>4.0.0</FileVersion>
-    <AssemblyVersion>4.0.0</AssemblyVersion>
+    <Version>4.0.1</Version>
+    <FileVersion>4.0.1</FileVersion>
+    <AssemblyVersion>4.0.1</AssemblyVersion>
 	<Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -26,9 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="9.0.1" />
-    <PackageReference Include="SqlKata" Version="2.4.0" />
-    <PackageReference Include="SqlKata.Execution" Version="2.4.0" />
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <PackageReference Include="SqlKata" Version="4.0.1" />
+    <PackageReference Include="SqlKata.Execution" Version="4.0.1" />
   </ItemGroup>
 
   <ItemGroup>
