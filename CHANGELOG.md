@@ -1,5 +1,7 @@
 # History
 
+## 5.0.0
+
 - 2026-10-29: upgraded to NET 10.
 
 ## 4.0.1
