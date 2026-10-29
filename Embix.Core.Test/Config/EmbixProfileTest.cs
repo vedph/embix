@@ -18,7 +18,7 @@ public sealed class EmbixProfileTest
     [Fact]
     public void Profile_Definitions_Ok()
     {
-        Assert.Equal(1, _profile.GetDocuments().Count);
+        Assert.Single(_profile.GetDocuments());
         Assert.Equal(3, _profile.MetadataFields.Count);
         Assert.Equal("rank", _profile.MetadataFields[0]);
         Assert.Equal("yearMin", _profile.MetadataFields[1]);

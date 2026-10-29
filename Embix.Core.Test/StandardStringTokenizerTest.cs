@@ -1,6 +1,4 @@
 ﻿using Embix.Core.Filters;
-using System;
-using System.Linq;
 using System.Text;
 using Xunit;
 
@@ -15,7 +13,7 @@ public sealed class StandardStringTokenizerTest
     [InlineData("One", "one")]
     [InlineData("One, Two! ", "one two")]
     [InlineData("it's true!", "it s true")]
-    public void Tokenize(string text, string expected)
+    public void Tokenize(string? text, string expected)
     {
         var tokenizer = new StandardStringTokenizer
         {
@@ -24,10 +22,10 @@ public sealed class StandardStringTokenizerTest
                 new StandardTextFilter())
         };
 
-        string[] actTokens = tokenizer.Tokenize(
-            new StringBuilder(text)).ToArray();
+        string[] actTokens = [.. tokenizer.Tokenize(
+            new StringBuilder(text))];
         string[] expTokens = expected.Length == 0
-            ? Array.Empty<string>() : expected.Split();
+            ? [] : expected.Split();
 
         Assert.Equal(expTokens.Length, actTokens.Length);
         for (int i = 0; i < expTokens.Length; i++)

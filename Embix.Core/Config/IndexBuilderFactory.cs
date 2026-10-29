@@ -39,7 +39,7 @@ public abstract class IndexBuilderFactory : IIndexBuilderFactory
     /// Gets or sets the dependency container, configured to include all
     /// the required assemblies for filter components.
     /// </summary>
-    public Container? Container { get; protected set; }
+    public Container Container { get; protected set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IndexBuilderFactory"/> class.
