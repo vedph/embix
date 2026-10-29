@@ -1,50 +1,47 @@
 ﻿using Embix.Core.Config;
-using SqlKata.Compilers;
-using SqlKata.Execution;
 using System;
 
 namespace Embix.Core;
 
 /// <summary>
-/// SQL-based index writer.
+/// Generic SQL-based index writer, using <see cref="SqlIndexRecordWriter"/>.
 /// </summary>
 public class SqlIndexWriter : BufferedIndexWriter, IIndexWriter
 {
-    private readonly IDbConnectionFactory _connFactory;
+    private readonly string _openQuote;
+    private readonly string _closeQuote;
 
     /// <summary>
-    /// Gets the SQL compiler.
+    /// Gets the connection factory.
     /// </summary>
-    protected Compiler SqlCompiler { get; }
+    protected IDbConnectionFactory ConnectionFactory { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SqlIndexWriter" /> class.
     /// </summary>
     /// <param name="profile">The profile to be used.</param>
     /// <param name="connFactory">The connection factory.</param>
-    /// <param name="compiler">The SQL kata compiler to be used.</param>
-    /// <exception cref="ArgumentNullException">profile or getConnection or
-    /// compiler</exception>
+    /// <param name="openQuote">The opening quote for SQL identifiers.</param>
+    /// <param name="closeQuote">The closing quote for SQL identifiers.</param>
+    /// <exception cref="ArgumentNullException">profile or connFactory
+    /// </exception>
     public SqlIndexWriter(
         EmbixProfile profile,
         IDbConnectionFactory connFactory,
-        Compiler compiler) : base(profile)
+        string openQuote = "\"",
+        string closeQuote = "\"") : base(profile)
     {
-        _connFactory = connFactory
+        ConnectionFactory = connFactory
             ?? throw new ArgumentNullException(nameof(connFactory));
-        SqlCompiler = compiler
-            ?? throw new ArgumentNullException(nameof(compiler));
+        _openQuote = openQuote;
+        _closeQuote = closeQuote;
     }
 
     /// <summary>
-    /// Gets a record writer.
+    /// Gets a new record writer.
     /// </summary>
-    /// <returns>
-    /// Record writer.
-    /// </returns>
-    protected override IIndexRecordWriter GetRecordWriter()
-    {
-        return new SqlIndexRecordWriter(new QueryFactory(
-            _connFactory.GetConnection(), SqlCompiler));
-    }
+    /// <returns>Record writer.</returns>
+    protected override IIndexRecordWriter GetRecordWriter() =>
+        new SqlIndexRecordWriter(ConnectionFactory.GetConnection(),
+            _openQuote, _closeQuote);
 }

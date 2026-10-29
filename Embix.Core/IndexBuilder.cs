@@ -1,15 +1,16 @@
-﻿using Embix.Core.Config;
+using Embix.Core.Config;
 using Embix.Core.Filters;
 using Fusi.Tools;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
-using System.Reflection.Metadata;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Embix.Core;
@@ -26,6 +27,7 @@ public sealed class IndexBuilder : IDisposable
     private readonly EmbixProfile _profile;
     private readonly IDbConnectionFactory _connFactory;
     private readonly IIndexWriter _writer;
+    private readonly bool _ownsWriter;
     private int _partitionCount;
     private bool _disposed;
 
@@ -34,6 +36,15 @@ public sealed class IndexBuilder : IDisposable
     /// as metadata by the builder.
     /// </summary>
     public const string META_FIELD_PREFIX = "m_";
+
+    /// <summary>
+    /// The field code used as the default key in the field-to-component
+    /// maps of <see cref="DocumentDefinition"/>.
+    /// </summary>
+    public const string DEFAULT_FIELD = "*";
+
+    // the count of rows passed at once from the reader to the workers
+    private const int ROW_BATCH_SIZE = 100;
 
     #region Properties
     /// <summary>
@@ -73,17 +84,25 @@ public sealed class IndexBuilder : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="IndexBuilder"/> class.
     /// </summary>
+    /// <param name="profile">The profile.</param>
     /// <param name="connFactory">The connection factory.</param>
-    /// <exception cref="ArgumentNullException">connFactory</exception>
+    /// <param name="writer">The index writer.</param>
+    /// <param name="ownsWriter">True if this builder owns
+    /// <paramref name="writer"/>, and thus must dispose it when disposed.
+    /// Pass false when sharing the same writer among several builders.</param>
+    /// <exception cref="ArgumentNullException">profile, connFactory or
+    /// writer</exception>
     public IndexBuilder(
         EmbixProfile profile,
         IDbConnectionFactory connFactory,
-        IIndexWriter writer)
+        IIndexWriter writer,
+        bool ownsWriter = true)
     {
         _profile = profile ?? throw new ArgumentNullException(nameof(profile));
         _connFactory = connFactory
             ?? throw new ArgumentNullException(nameof(connFactory));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _ownsWriter = ownsWriter;
         PartitionCount = 2;
         MinPartitionSize = 100;
     }
@@ -98,185 +117,36 @@ public sealed class IndexBuilder : IDisposable
     /// <exception cref="ArgumentNullException">countSql</exception>
     public int GetRecordCount(string countSql, IDbConnection? connection = null)
     {
-        if (countSql == null)
-            throw new ArgumentNullException(nameof(countSql));
+        ArgumentNullException.ThrowIfNull(countSql);
 
-        bool mustClose = false, mustDispose = false;
-
-        // open connection
-        if (connection == null)
+        IDbConnection? owned = null;
+        bool mustClose = false;
+        try
         {
-            connection = _connFactory.GetConnection();
-            mustDispose = true;
-        }
-        if (connection.State == ConnectionState.Closed)
-        {
-            connection.Open();
-            mustClose = true;
-        }
-
-        // execute command
-        IDbCommand cmd = connection.CreateCommand();
-        cmd.CommandText = countSql;
-        int result = (int)(long)cmd.ExecuteScalar();
-
-        // apply limit if any
-        if (RecordLimit > 0 && result > RecordLimit) result = RecordLimit;
-
-        // close connection
-        if (mustClose) connection.Close();
-        if (mustDispose) connection.Dispose();
-
-        return result;
-    }
-
-    private static void DoIndex(IndexTaskOptions options)
-    {
-        ILogger? logger = options.Logger;
-        logger?.LogInformation("Starting DoIndex for " +
-            $"{options.DocumentId}.{options.PartitionNumber}");
-
-        StringBuilder text = new();
-        int count = 0;
-        ProgressReport? report = options.Progress != null
-            ? new ProgressReport() : null;
-        string? msgPrefix = options.Progress != null
-            ? $"[{options.PartitionNumber:000}.{options.DocumentId}] "
-            : null;
-        Dictionary<string, object> metadata = new();
-
-        if (options.Progress != null)
-        {
-            report!.Message = msgPrefix! + "Starting indexer";
-            options.Progress.Report(report);
-        }
-
-        // get the document definition
-        DocumentDefinition doc = options.Profile!.GetDocuments()
-            .First(d => d.Id == options.DocumentId);
-        CompositeTextFilter emptyFilter = new();
-        IStringTokenizer nullTokenizer = new NullStringTokenizer();
-
-        // create the sets of filters for the requested document fields
-        Dictionary<string, CompositeTextFilter> filters
-            = new();
-        foreach (var kv in doc.TextFilterChains)
-        {
-            filters[kv.Key] = string.IsNullOrEmpty(kv.Value)
-                ? emptyFilter
-                : new CompositeTextFilter(
-                options.Profile.GetFilters(kv.Value).ToArray());
-        }
-
-        // create the sets of tokenizers for the requested document fields
-        Dictionary<string, IStringTokenizer> tokenizers
-            = new();
-        foreach (var kv in doc.Tokenizers)
-        {
-            tokenizers[kv.Key] = string.IsNullOrEmpty(kv.Value)
-                ? nullTokenizer
-                : options.Profile.GetTokenizer(kv.Value) ?? nullTokenizer;
-        }
-
-        // create the set of multipliers for the requested document fields
-        Dictionary<string, IStringTokenMultiplier?> multipliers
-            = new();
-        foreach (var kv in doc.TokenMultipliers)
-        {
-            multipliers[kv.Key] = string.IsNullOrEmpty(kv.Value)
-                ? null
-                : options.Profile.GetTokenMultiplier(kv.Value);
-        }
-
-        // for each record
-        IDataReader reader = options.Reader!;
-        while (reader.Read())
-        {
-            metadata.Clear();
-            count++;
-
-            // load metadata for this record in advance, as we cannot say
-            // which metadata might be used by which data field in writing
-            for (int i = 0; i < reader.FieldCount; i++)
+            if (connection == null)
             {
-                if (reader.IsDBNull(i)) continue;
-
-                // get its name; by convention, metadata fields are
-                // prefixed with m_; all the other fields are typically
-                // aliases assigned so that the field name can be used
-                // as its short code (e.g. place.description AS pldsc)
-                string field = reader.GetName(i);
-                if (field.StartsWith(META_FIELD_PREFIX))
-                {
-                    metadata[field[META_FIELD_PREFIX.Length..]]
-                        = reader.GetValue(i);
-                }
+                connection = owned = _connFactory.GetConnection();
+            }
+            if (connection.State != ConnectionState.Open)
+            {
+                connection.Open();
+                mustClose = true;
             }
 
-            // for each data field in record
-            for (int i = 0; i < reader.FieldCount; i++)
-            {
-                if (reader.IsDBNull(i)) continue;
+            using IDbCommand cmd = connection.CreateCommand();
+            cmd.CommandText = countSql;
+            int result = Convert.ToInt32(cmd.ExecuteScalar(),
+                CultureInfo.InvariantCulture);
 
-                string field = reader.GetName(i);
-
-                // non-metadata fields have text to be processed
-                if (!field.StartsWith(META_FIELD_PREFIX))
-                {
-                    // get the text
-                    text.Clear();
-                    text.Append(reader.GetString(i));
-
-                    // filter it
-                    CompositeTextFilter filter = filters.ContainsKey(field) ?
-                        filters[field] : filters["*"] ?? emptyFilter;
-                    filter.Apply(text);
-                    if (text.Length == 0) continue;
-
-                    // tokenize it and write each token
-                    IStringTokenizer tokenizer = tokenizers.ContainsKey(field) ?
-                        tokenizers[field] : tokenizers["*"] ?? nullTokenizer;
-
-                    foreach (string token in tokenizer.Tokenize(text))
-                    {
-                        // multiply if required
-                        if (multipliers.ContainsKey(field)
-                            && multipliers[field] != null)
-                        {
-                            foreach (string result in
-                                multipliers[field]!.Multiply(token))
-                            {
-                                options.Writer!.Write(options.DocumentId!,
-                                    options.PartitionNumber,
-                                    field, token, metadata);
-                            }
-                        }
-                        else
-                        {
-                            options.Writer!.Write(options.DocumentId!,
-                                options.PartitionNumber,
-                                field, token, metadata);
-                        }
-                    }
-                }
-            }
-
-            if (options.Progress != null && count % 10 == 0)
-            {
-                report!.Message = msgPrefix + count;
-                report.Percent = count * 100 / options.PartitionSize;
-                options.Progress.Report(report);
-            }
-        } // record
-
-        if (options.Progress != null)
-        {
-            report!.Message = msgPrefix +  "Completed indexer";
-            report.Percent = 100;
-            options.Progress.Report(report);
+            // apply limit if any
+            if (RecordLimit > 0 && result > RecordLimit) result = RecordLimit;
+            return result;
         }
-        logger?.LogInformation("Completed DoIndex for " +
-            $"{options.DocumentId}.{options.PartitionNumber}");
+        finally
+        {
+            if (mustClose) connection?.Close();
+            owned?.Dispose();
+        }
     }
 
     /// <summary>
@@ -289,125 +159,375 @@ public sealed class IndexBuilder : IDisposable
     /// <exception cref="InvalidOperationException">Document not found</exception>
     public Tuple<int, int> CalculatePartitionCount(string documentId)
     {
-        if (documentId is null)
-            throw new ArgumentNullException(nameof(documentId));
+        ArgumentNullException.ThrowIfNull(documentId);
 
-        DocumentDefinition? doc = _profile.GetDocument(documentId);
-        if (doc == null)
-            throw new InvalidOperationException("Document not found: " + documentId);
+        DocumentDefinition doc = _profile.GetDocument(documentId)
+            ?? throw new InvalidOperationException(
+                "Document not found: " + documentId);
 
-        using IDbConnection connection = _connFactory.GetConnection();
-        connection.Open();
+        int total = GetRecordCount(doc.CountSql!);
+        return Tuple.Create(GetPartitionCount(total), total);
+    }
 
-        // calculate partitions
-        int total = GetRecordCount(doc.CountSql!, connection);
-        int n = total < MinPartitionSize ? 1 : _partitionCount;
-        return Tuple.Create(n, total);
+    private int GetPartitionCount(int total) =>
+        total < MinPartitionSize ? 1 : Math.Max(1, Math.Min(_partitionCount, total));
+
+    private static void Report(IProgress<ProgressReport>? progress,
+        string message, int percent = 0)
+    {
+        // a new report each time, as Progress<T> handlers run asynchronously
+        progress?.Report(new ProgressReport
+        {
+            Message = message,
+            Percent = percent
+        });
     }
 
     /// <summary>
-    /// Builds the index asynchronously.
+    /// Builds the index asynchronously. A single reader streams the
+    /// document's records from the database, while
+    /// <see cref="PartitionCount"/> parallel workers process them. This way,
+    /// records are read once, in any order, and no paging is required:
+    /// the <c>{0}</c> (offset) and <c>{1}</c> (limit) placeholders in
+    /// <see cref="DocumentDefinition.DataSql"/> are optional, and if present
+    /// they are replaced with 0 and the count of records to process. When all
+    /// the records have been processed, the writer is flushed.
     /// </summary>
     /// <param name="documentId">The ID of the "document" in the profile.
     /// </param>
     /// <param name="cancel">The cancel token.</param>
     /// <param name="progress">The optional progress reporter.</param>
     /// <exception cref="ArgumentNullException">document ID</exception>
-    /// <exception cref="ApplicationException">document ID not found</exception>
-    public Task BuildAsync(
+    /// <exception cref="InvalidOperationException">document ID not found
+    /// </exception>
+    public async Task BuildAsync(
         string documentId,
-        CancellationToken cancel,
-        IProgress<ProgressReport> progress)
+        CancellationToken cancel = default,
+        IProgress<ProgressReport>? progress = null)
     {
-        if (documentId is null) throw new ArgumentNullException(nameof(documentId));
+        ArgumentNullException.ThrowIfNull(documentId);
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // get document
-        DocumentDefinition? doc = _profile.GetDocument(documentId);
-        if (doc == null)
-            throw new InvalidOperationException("Document not found: " + documentId);
-
-        // connect to database
-        ProgressReport? report = progress != null ? new ProgressReport() : null;
-        int total;
-        using (IDbConnection connection = _connFactory.GetConnection())
+        DocumentDefinition doc = _profile.GetDocument(documentId)
+            ?? throw new InvalidOperationException(
+                "Document not found: " + documentId);
+        if (string.IsNullOrEmpty(doc.CountSql) || string.IsNullOrEmpty(doc.DataSql))
         {
-            connection.Open();
-
-            // calculate partitions
-            report!.Message = "Calculating partitions";
-            progress?.Report(report);
-            total = GetRecordCount(doc.CountSql!, connection);
+            throw new InvalidOperationException(
+                $"Document {documentId} has no CountSql or DataSql");
         }
 
-        int partitionCount = total < MinPartitionSize ? 1 : _partitionCount;
-        int partitionSize = (int)Math.Ceiling((double)total / partitionCount);
+        // calculate partitions
+        Report(progress, "Calculating partitions");
+        int total = GetRecordCount(doc.CountSql);
+        int partitionCount = GetPartitionCount(total);
+        Report(progress, "Partitions: " + partitionCount);
+        if (total == 0) return;
 
-        if (report != null)
-        {
-            report.Message = "Partitions: " + partitionCount;
-            progress?.Report(report);
-        }
+        // the reader produces batches of rows, consumed by the workers;
+        // the channel is bounded to limit memory usage when the reader
+        // is faster than workers
+        Channel<RowBatch> channel = Channel.CreateBounded<RowBatch>(
+            new BoundedChannelOptions(partitionCount * 4)
+            {
+                SingleWriter = true,
+                FullMode = BoundedChannelFullMode.Wait
+            });
+        // any failure cancels all the tasks, so that the reader cannot remain
+        // blocked on a full channel
+        using CancellationTokenSource failure =
+            CancellationTokenSource.CreateLinkedTokenSource(cancel);
+        BuildContext context = new(documentId, doc, total, progress,
+            failure.Token);
 
-        // spawn 1 task per partition
-        IDbConnection[] connections = new IDbConnection[partitionCount];
-        IDataReader[] readers = new IDataReader[partitionCount];
-        Task[] tasks = new Task[partitionCount];
-
+        Task[] tasks = new Task[partitionCount + 1];
         for (int i = 0; i < partitionCount; i++)
         {
-            connections[i] = _connFactory.GetConnection();
-            connections[i].Open();
-
-            IDbCommand cmd = connections[i].CreateCommand();
-            // {0}=skip, {1}=limit
-            cmd.CommandText = string.Format(doc.DataSql!,
-                i * partitionSize, partitionSize);
-            readers[i] = cmd.ExecuteReader(CommandBehavior.CloseConnection);
-
-            var options = new IndexTaskOptions
-            {
-                PartitionNumber = i + 1,
-                PartitionSize = partitionSize,
-                DocumentId = documentId,
-                Profile = _profile,
-                Reader = readers[i],
-                Writer = _writer,
-                Progress = progress,
-                Logger = Logger
-            };
-            tasks[i] = new Task(() => DoIndex(options), cancel);
-            tasks[i].Start();
+            int partitionNr = i + 1;
+            tasks[i] = RunOrCancel(() => ConsumeAsync(channel.Reader,
+                partitionNr, context), failure);
         }
+        tasks[partitionCount] = RunOrCancel(() => ProduceAsync(channel.Writer,
+            context), failure);
 
-        // https://stackoverflow.com/questions/12337671/using-async-await-for-multiple-tasks
-        return Task.WhenAll(tasks);
-    }
-
-    internal sealed class IndexTaskOptions
-    {
-        public int PartitionNumber { get; set; }
-        public int PartitionSize { get; set; }
-        public string? DocumentId { get; set; }
-        public EmbixProfile? Profile { get; set; }
-        public IDataReader? Reader { get; set; }
-        public IIndexWriter? Writer { get; set; }
-        public IProgress<ProgressReport>? Progress { get; set; }
-        public ILogger? Logger { get; set; }
-    }
-
-    private void Dispose(bool disposing)
-    {
-        if (!_disposed)
+        Task all = Task.WhenAll(tasks);
+        try
         {
-            if (disposing) _writer.Dispose();
-            _disposed = true;
+            await all.ConfigureAwait(false);
+        }
+        catch
+        {
+            cancel.ThrowIfCancellationRequested();
+            // rethrow the original failure rather than the cancellations
+            // or channel closures it caused
+            Exception? cause = all.Exception?.InnerExceptions.FirstOrDefault(
+                e => e is not OperationCanceledException
+                    and not ChannelClosedException);
+            if (cause != null) ExceptionDispatchInfo.Capture(cause).Throw();
+            throw;
+        }
+
+        _writer.Flush();
+    }
+
+    private static Task RunOrCancel(Func<Task> action,
+        CancellationTokenSource failure)
+    {
+        return Task.Run(async () =>
+        {
+            try
+            {
+                await action().ConfigureAwait(false);
+            }
+            catch
+            {
+                failure.Cancel();
+                throw;
+            }
+        });
+    }
+
+    private async Task ProduceAsync(ChannelWriter<RowBatch> writer,
+        BuildContext context)
+    {
+        try
+        {
+            using IDbConnection connection = _connFactory.GetConnection();
+            connection.Open();
+            using IDbCommand cmd = connection.CreateCommand();
+            // {0}=skip, {1}=limit
+            cmd.CommandText = string.Format(CultureInfo.InvariantCulture,
+                context.Document.DataSql!, 0, context.Total);
+            using IDataReader reader = cmd.ExecuteReader();
+
+            string[] names = new string[reader.FieldCount];
+            for (int i = 0; i < names.Length; i++) names[i] = reader.GetName(i);
+
+            int count = 0;
+            List<object[]> rows = new(ROW_BATCH_SIZE);
+            while (count < context.Total && reader.Read())
+            {
+                context.Cancel.ThrowIfCancellationRequested();
+                object[] values = new object[names.Length];
+                reader.GetValues(values);
+                rows.Add(values);
+                count++;
+
+                if (rows.Count == ROW_BATCH_SIZE)
+                {
+                    await writer.WriteAsync(new RowBatch(names, [.. rows]),
+                        context.Cancel).ConfigureAwait(false);
+                    rows.Clear();
+                }
+            }
+            if (rows.Count > 0)
+            {
+                await writer.WriteAsync(new RowBatch(names, [.. rows]),
+                    context.Cancel).ConfigureAwait(false);
+            }
+            writer.Complete();
+            Logger?.LogInformation("Read {Count} records for {DocumentId}",
+                count, context.DocumentId);
+        }
+        catch (Exception ex)
+        {
+            writer.TryComplete(ex);
+            throw;
         }
     }
 
+    private async Task ConsumeAsync(ChannelReader<RowBatch> reader,
+        int partitionNr, BuildContext context)
+    {
+        Logger?.LogInformation("Starting partition {DocumentId}.{PartitionNr}",
+            context.DocumentId, partitionNr);
+        string msgPrefix = $"[{partitionNr:000}.{context.DocumentId}] ";
+        Report(context.Progress, msgPrefix + "Starting indexer");
+
+        // the pipelines are created for each partition, as tokenizers
+        // are stateful and not thread-safe
+        PartitionIndexer indexer = new(this, context, partitionNr);
+        int count = 0;
+
+        await foreach (RowBatch batch in reader.ReadAllAsync(context.Cancel)
+            .ConfigureAwait(false))
+        {
+            foreach (object[] row in batch.Rows)
+            {
+                context.Cancel.ThrowIfCancellationRequested();
+                indexer.Index(batch.Names, row);
+            }
+            count += batch.Rows.Length;
+
+            int processed = context.AddProcessed(batch.Rows.Length);
+            Report(context.Progress, msgPrefix + count,
+                (int)(processed * 100L / context.Total));
+        }
+
+        Report(context.Progress, msgPrefix + "Completed indexer", 100);
+        Logger?.LogInformation(
+            "Completed partition {DocumentId}.{PartitionNr}: {Count} records",
+            context.DocumentId, partitionNr, count);
+    }
+
+    /// <summary>
+    /// The indexer of a single partition, i.e. of the records processed
+    /// by a single worker.
+    /// </summary>
+    private sealed class PartitionIndexer(IndexBuilder builder,
+        BuildContext context, int partitionNr)
+    {
+        private readonly DocumentPipelines _pipelines =
+            new(builder._profile, context.Document);
+        private readonly Dictionary<string, object> _metadata = [];
+        private readonly StringBuilder _text = new();
+        private string?[]? _metaKeys;
+        private FieldPipeline?[]? _fieldPipelines;
+
+        private void ResolveFields(string[] names)
+        {
+            _metaKeys = new string?[names.Length];
+            _fieldPipelines = new FieldPipeline?[names.Length];
+            for (int i = 0; i < names.Length; i++)
+            {
+                if (names[i].StartsWith(META_FIELD_PREFIX, StringComparison.Ordinal))
+                    _metaKeys[i] = names[i][META_FIELD_PREFIX.Length..];
+                else
+                    _fieldPipelines[i] = _pipelines.Get(names[i]);
+            }
+        }
+
+        public void Index(string[] names, object[] row)
+        {
+            // resolve fields once, as all the rows have the same fields
+            if (_fieldPipelines == null) ResolveFields(names);
+            IIndexWriter writer = builder._writer;
+
+            // load metadata for this record in advance, as we cannot say
+            // which metadata might be used by which data field in writing
+            _metadata.Clear();
+            for (int i = 0; i < row.Length; i++)
+            {
+                if (_metaKeys![i] != null && row[i] is not DBNull)
+                    _metadata[_metaKeys[i]!] = row[i];
+            }
+
+            // for each data field in record: non-metadata fields have text
+            // to be processed
+            for (int i = 0; i < row.Length; i++)
+            {
+                FieldPipeline? pipeline = _fieldPipelines![i];
+                if (pipeline == null || row[i] is DBNull) continue;
+
+                _text.Clear().Append(row[i] as string
+                    ?? Convert.ToString(row[i], CultureInfo.InvariantCulture));
+
+                pipeline.Filter.Apply(_text);
+                if (_text.Length == 0) continue;
+
+                foreach (string token in pipeline.Tokenizer.Tokenize(_text))
+                {
+                    if (pipeline.Multiplier == null)
+                    {
+                        writer.Write(context.DocumentId, partitionNr, names[i],
+                            token, _metadata);
+                        continue;
+                    }
+                    foreach (string result in pipeline.Multiplier.Multiply(token))
+                    {
+                        writer.Write(context.DocumentId, partitionNr, names[i],
+                            result, _metadata);
+                    }
+                }
+            }
+        }
+    }
+
+    private sealed record RowBatch(string[] Names, object[][] Rows);
+
+    private sealed class BuildContext(
+        string documentId,
+        DocumentDefinition document,
+        int total,
+        IProgress<ProgressReport>? progress,
+        CancellationToken cancel)
+    {
+        private int _processed;
+
+        public string DocumentId { get; } = documentId;
+        public DocumentDefinition Document { get; } = document;
+        public int Total { get; } = total;
+        public IProgress<ProgressReport>? Progress { get; } = progress;
+        public CancellationToken Cancel { get; } = cancel;
+
+        public int AddProcessed(int count) =>
+            Interlocked.Add(ref _processed, count);
+    }
+
+    private sealed record FieldPipeline(
+        CompositeTextFilter Filter,
+        IStringTokenizer Tokenizer,
+        IStringTokenMultiplier? Multiplier);
+
+    /// <summary>
+    /// The text processing components of a document, resolved for each of its
+    /// fields, falling back to the components defined for
+    /// <see cref="DEFAULT_FIELD"/>.
+    /// </summary>
+    private sealed class DocumentPipelines(EmbixProfile profile,
+        DocumentDefinition doc)
+    {
+        private readonly Dictionary<string, CompositeTextFilter> _filters = [];
+        private readonly Dictionary<string, IStringTokenizer> _tokenizers = [];
+        private readonly Dictionary<string, IStringTokenMultiplier?> _multipliers = [];
+
+        private static string? GetComponentId(Dictionary<string, string> map,
+            string field)
+        {
+            if (map.TryGetValue(field, out string? id)) return id;
+            return map.TryGetValue(DEFAULT_FIELD, out id) ? id : null;
+        }
+
+        private static T GetOrCreate<T>(Dictionary<string, T> cache, string? id,
+            Func<string, T> create, T empty)
+        {
+            if (string.IsNullOrEmpty(id)) return empty;
+            if (!cache.TryGetValue(id, out T? component))
+            {
+                component = create(id);
+                cache[id] = component;
+            }
+            return component;
+        }
+
+        public FieldPipeline Get(string field)
+        {
+            CompositeTextFilter filter = GetOrCreate(_filters,
+                GetComponentId(doc.TextFilterChains, field),
+                id => new CompositeTextFilter([.. profile.GetFilters(id)]),
+                new CompositeTextFilter());
+
+            IStringTokenizer tokenizer = GetOrCreate(_tokenizers,
+                GetComponentId(doc.Tokenizers, field),
+                id => profile.GetTokenizer(id) ?? new NullStringTokenizer(),
+                new NullStringTokenizer());
+
+            IStringTokenMultiplier? multiplier = GetOrCreate(_multipliers,
+                GetComponentId(doc.TokenMultipliers, field),
+                profile.GetTokenMultiplier,
+                null);
+
+            return new FieldPipeline(filter, tokenizer, multiplier);
+        }
+    }
+
+    /// <summary>
+    /// Disposes this builder, and its writer when owned.
+    /// </summary>
     public void Dispose()
     {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
+        if (_disposed) return;
+        if (_ownsWriter) _writer.Dispose();
+        _disposed = true;
     }
 }

@@ -1,38 +1,48 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <NeutralLanguage>en-US</NeutralLanguage>
-    <Description>Simple RDBMS embedded index builder - PostgreSql</Description>
-    <Copyright>by Daniele Fusi</Copyright>
-    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <Authors>Daniele Fusi</Authors>
-    <Company>Fusi</Company>
-    <Product>Embix</Product>
-    <Version>5.0.0</Version>
-    <FileVersion>5.0.0</FileVersion>
-    <AssemblyVersion>5.0.0</AssemblyVersion>
-	<Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<Description>Simple RDBMS embedded index builder - PostgreSql</Description>
+		<Copyright>by Daniele Fusi</Copyright>
+		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<Authors>Daniele Fusi</Authors>
+		<Company>Fusi</Company>
+		<Product>Embix</Product>
+		<Version>5.0.0</Version>
+		<FileVersion>5.0.0</FileVersion>
+		<AssemblyVersion>5.0.0</AssemblyVersion>
+		<Nullable>enable</Nullable>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<!-- SourceLink-related -->
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+		<Deterministic>true</Deterministic>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Assets\Schema.pgsql" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="Assets\*.pgsql" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Assets\Schema.pgsql" />
-  </ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="Embix.PgSql.Test" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Npgsql" Version="10.0.3" />
-    <PackageReference Include="SqlKata" Version="4.0.1" />
-    <PackageReference Include="SqlKata.Execution" Version="4.0.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Assets\*.pgsql" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Embix.Core\Embix.Core.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" Version="10.0.402" />
+		<PackageReference Include="Npgsql" Version="10.0.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Embix.Core\Embix.Core.csproj" />
+	</ItemGroup>
 
 </Project>

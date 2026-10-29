@@ -1,7 +1,6 @@
-﻿using Fusi.Tools.Data;
+using Fusi.Tools.Data;
 using MySql.Data.MySqlClient;
-using SqlKata.Compilers;
-using System.Data;
+using System.Data.Common;
 
 namespace Embix.Search.MySql;
 
@@ -27,13 +26,13 @@ public abstract class MySqlPagedQueryBuilder<TRequest>
     /// </summary>
     /// <param name="connString">The connection string.</param>
     /// <returns>The connection.</returns>
-    protected override IDbConnection GetConnection(string connString)
+    protected override DbConnection GetConnection(string connString)
         => new MySqlConnection(connString);
 
     /// <summary>
-    /// Gets the SQL compiler.
+    /// Creates the SQL dialect.
     /// </summary>
-    /// <returns>The compiler.</returns>
-    protected override Compiler GetSqlCompiler()
-        => new MySqlCompiler();
+    /// <returns>The dialect.</returns>
+    protected override SqlDialect CreateDialect()
+        => new MySqlDialect();
 }

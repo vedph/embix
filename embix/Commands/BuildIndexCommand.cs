@@ -63,7 +63,7 @@ namespace Embix.Commands
                 "The database name");
 
             CommandOption dbTypeOption = command.Option("-t|--type",
-                "The type of database: mysql (default), mssql, pgsql",
+                "The type of database: pgsql (default), mysql",
                 CommandOptionType.SingleValue);
 
             CommandOption clearOption = command.Option("-c|--clear",
@@ -83,7 +83,7 @@ namespace Embix.Commands
                 CommandOptionType.SingleValue);
 
             CommandOption bufferSizeOption = command.Option("-b|--bufferSize",
-                "Set the write buffer size for tokens (default=100)",
+                "Set the write buffer size for tokens (default=10000)",
                 CommandOptionType.SingleValue);
 
             CommandOption limitOption = command.Option("-l|--limit",
@@ -100,7 +100,7 @@ namespace Embix.Commands
                 if (partitionMinSizeOption.HasValue())
                     int.TryParse(partitionMinSizeOption.Value(), out partitionMinSize);
 
-                int bufferSize = 100;
+                int bufferSize = 10000;
                 if (bufferSizeOption.HasValue())
                     int.TryParse(bufferSizeOption.Value(), out bufferSize);
 
@@ -112,7 +112,7 @@ namespace Embix.Commands
                     options,
                     profilePathArgument.Value,
                     dbNameArgument.Value,
-                    dbTypeOption.Value() ?? "mysql",
+                    dbTypeOption.Value() ?? "pgsql",
                     clearOption.HasValue(),
                     partitionCount, partitionMinSize, bufferSize,
                     limit);
@@ -140,10 +140,10 @@ namespace Embix.Commands
                 $"Database type: {_dbType}\n");
 
             Serilog.Log.Information("BUILD INDEX");
-            IIndexBuilderFactory factory = null;
+            IIndexBuilderFactory factory;
             string connString = string.Format(
                 _options.Configuration[$"ConnectionStrings:{_dbType}"], _dbName);
-            ITableInitializer initializer = null;
+            ITableInitializer initializer;
 
             switch (_dbType.ToLowerInvariant())
             {
@@ -170,6 +170,30 @@ namespace Embix.Commands
 
             initializer.Initialize(_clear);
 
+            // PostgreSql bulk mode: build indexes once after loading data
+            PgSqlTableInitializer pgInitializer =
+                initializer as PgSqlTableInitializer;
+            pgInitializer?.DropIndexes();
+            try
+            {
+                // disposing the factory flushes the shared writer
+                using (factory)
+                {
+                    await BuildDocuments(factory);
+                }
+            }
+            finally
+            {
+                if (pgInitializer != null)
+                {
+                    Console.WriteLine("\nCreating indexes...");
+                    pgInitializer.CreateIndexes();
+                }
+            }
+        }
+
+        private async Task BuildDocuments(IIndexBuilderFactory factory)
+        {
             ProgressBar mainBar = new(100, null, new ProgressBarOptions
             {
                 DisplayTimeInRealTime = true,
@@ -194,19 +218,24 @@ namespace Embix.Commands
                 await builder.BuildAsync(document.Id, CancellationToken.None,
                     new Progress<ProgressReport>(report =>
                     {
-                        IProgressBar bar = mainBar;
-                        Match m = r.Match(report.Message ?? "");
-                        if (m.Success)
+                        // handlers run concurrently on the thread pool
+                        lock (childBars)
                         {
-                            if (!childBars.ContainsKey(m.Groups[1].Value))
+                            IProgressBar bar = mainBar;
+                            Match m = r.Match(report.Message ?? "");
+                            if (m.Success)
                             {
-                                childBars[m.Groups[1].Value] =
-                                    mainBar.Spawn(100, m.Groups[1].Value,
+                                if (!childBars.TryGetValue(m.Groups[1].Value,
+                                    out ChildProgressBar child))
+                                {
+                                    child = mainBar.Spawn(100, m.Groups[1].Value,
                                         childBarOptions);
+                                    childBars[m.Groups[1].Value] = child;
+                                }
+                                bar = child;
                             }
-                            bar = childBars[m.Groups[1].Value];
+                            bar.Tick(report.Percent, report.Message);
                         }
-                        bar.Tick(report.Percent, report.Message);
                     }));
             }
         }

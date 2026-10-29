@@ -64,17 +64,17 @@ Each field to be processed for indexing in this query is _aliased_, so that its 
 
 For instance, say a table in our database lists some places, and among other fields it has a primary key field named `id`, and some text fields named `title`, `description`, and `details`.
 
-In this sample, we could define our "document" with a `SELECT` query template like this, where placeholders `{0}` and `{1}` represent values to be replaced at runtime:
+In this sample, we could define our "document" with a `SELECT` query like this:
 
 ```sql
 SELECT title AS plttl,
       description AS pldsc,
       details AS pldtl,
       id AS m_target_id
-      FROM place
-      ORDER BY place.id
-      LIMIT {1} OFFSET {0};
+      FROM place;
 ```
+
+Records are read once, in any order, so no `ORDER BY` is required. The query can optionally include the placeholders `{0}` and `{1}`, which are replaced at runtime with 0 (the count of records to skip) and the count of records to process (i.e. the result of the count query, eventually capped by the records limit option), e.g. `... FROM place LIMIT {1} OFFSET {0};`. This is useful to let the database stop early when using a records limit.
 
 This query defines a "document", i.e. a source of text to be indexed, here with 3 fields to be indexed (`title`, `description`, `details`), and a fourth one (`id`) to be used as metadata during indexing (the convention is to prefix each alias of a metadatum field with `m_`).
 
@@ -193,7 +193,7 @@ For example, consider this profile having 2 chains, 2 tokenizers, and 1 document
     {
       "Id": "place",
       "CountSql": "SELECT COUNT(*) FROM place;",
-      "DataSql": "SELECT title AS plttl, description AS pldsc, details AS pldtl, id AS m_target_id FROM place ORDER BY place.id LIMIT {1} OFFSET {0};",
+      "DataSql": "SELECT title AS plttl, description AS pldsc, details AS pldtl, id AS m_target_id FROM place;",
       "TextFilterChains": {
         "*": "tag-wsp-std",
         "nmlng": "lng"
@@ -215,11 +215,28 @@ This means that for each (non-metadata) selected field in each record from the p
 
 All the metadata fields which should be stored in the `occurrence` table are listed in the `MetadataFields` array. It is up to the user add the required fields to the basic occurrence table so that metadata can be stored with each occurrence. Note that all these additional fields must be nullable, as they are all optional.
 
-To process each document, you must use a corresponding `IndexBuilder` object. This reads the profile, partitions the records to be indexed in subsets, and spawns one thread for each. Every thread opens its connection to the database, and reads records from it. For each record, it collects metada fields and processes data fields, generating a number of tokens. Each token gets passed to an index writer (implementing `IIndexWriter`), in charge of storing tokens and their occurrences in the database.
+To process each document, you must use a corresponding `IndexBuilder` object. This reads the profile, and executes the document's data query with a single reader, which streams the records to a number of parallel workers ("partitions"). For each record, a worker it collects metada fields and processes data fields, generating a number of tokens. Each token gets passed to an index writer (implementing `IIndexWriter`), in charge of storing tokens and their occurrences in the database.
 
 ## Index Writer
 
-In most cases, the `SqlIndexWriter` can be used as a writer. It uses [SqlKata](https://sqlkata.com/) to implement a DB-engine agnostic approach, while still adopting a bulk write strategy. This way, the same writer can be used for the most popular RDBMS systems, like MySql (or MariaDB), Microsoft SQL Server, and PostgreSQL.
+Index writers are buffered: each partition fills its own buffer, which is flushed to the database in bulk when full, ensuring that no occurrence is written before its token. Each database type provides its own writer:
+
+- PostgreSQL (`PgSqlIndexWriter`): writes via `COPY`, the fastest bulk load strategy in PostgreSQL.
+- generic (`SqlIndexWriter`): writes via parameterized multi-row `INSERT` statements, using plain ADO.NET. This is used for MySql (or MariaDB), and can be used for other RDBMS by specifying how to quote identifiers.
+
+### PostgreSQL Schema
+
+The PostgreSQL schema requires PostgreSQL 15 or higher, with the `pg_trgm` extension (part of the standard contrib modules; if not yet installed in the target database, the initializer creates it, so the user needs the privilege to do so). Besides primary keys, it provides these indexes:
+
+- `eix_token (value, language)`: unique (`NULLS NOT DISTINCT`); also serves equality searches on values.
+- `eix_token (value text_pattern_ops)`: prefix searches (`LIKE 'abc%'`) whatever the database collation.
+- `eix_token USING gin (value gin_trgm_ops)`: contains, ends-with, wildcards, case-insensitive (`ILIKE`), regular expression, and trigram similarity searches.
+- `eix_occurrence (token_id, field, target_id)`: the main search path from matching tokens to their targets, covering so that it allows index-only scans. It also backs the foreign key to `eix_token`.
+- `eix_occurrence (target_id, field)`: lookups by target.
+
+When building an index, the CLI drops the secondary indexes and the foreign key before loading data, and recreates them after it (see `PgSqlTableInitializer.DropIndexes` and `CreateIndexes`), as building indexes once is much faster than updating them at each insert. Recreating the unique index also verifies that no duplicate token was written. If you add your own indexes to the index tables, drop and recreate them in the same way when loading large indexes.
+
+The schema scripts are idempotent, and upgrade the Embix 4 schema by replacing its indexes. Note that in Embix 4 schemas `field` is `char(5)`; you can change it into `varchar(50)` with `ALTER TABLE eix_occurrence ALTER COLUMN field TYPE varchar(50);`.
 
 In its target database Embix uses just two simple tables for storing index data:
 
@@ -233,10 +250,54 @@ The essential index flow is represented by this picture.
 ![flow](flow.png)
 
 1. From top to bottom, we start with the database to be indexed and a profile JSON document.
-2. Then, for each source document (in the sense explained above) the index builder decides the number of partitions to split the total rows into. It then spawns as many parallel threads as partitions, each processing one of them.
-3. Every partition thread reads data row by row, analyzing the text fields from each; the result is a list of filtered tokens. Tokens are then wrapped into index records. An index record is an abstraction composed by a token and its occurrence, where the token can be missing if it has already been found. In this case, the occurrence is enough, as it carries the ID of the token it refers to. The token ID is generated by the index builder, which ensures that each parallel process gets a unique, automatically incremented numeric identifier.
+2. Then, for each source document (in the sense explained above) the index builder decides the number of partitions, i.e. of parallel workers. A single reader reads all the document's records once, and passes them in batches to the workers through a bounded queue, so that memory usage is limited even when reading is faster than processing.
+3. Every worker processes the records it receives, analyzing the text fields from each; the result is a list of filtered tokens. Tokens are then wrapped into index records. An index record is an abstraction composed by a token and its occurrence, where the token can be missing if it has already been found. In this case, the occurrence is enough, as it carries the ID of the token it refers to. The token ID is generated by the index builder, which ensures that each parallel process gets a unique, automatically incremented numeric identifier.
 4. each index record gets passed to an index writer. In our case, this is a buffered writer, which reduces the number of roundtrips to the database. The buffered writer has a buffer for each partition. It fills each buffer accordingly, up to its maximum capacity; when this is reached, the buffer is emptied and its contents are passed to an index record writer.
 5. the index record writer (there is one for each buffer) receives the records and writes them into the database. The writer ensures that no occurrence is written before the token it refers to (or a FK constraint error would occur).
+
+## Search
+
+The `Embix.Search` libraries help building and executing search queries on the index (and on any other table), using plain parameterized SQL via ADO.NET:
+
+- `SqlDialect` represents the SQL features differing across RDBMS (identifiers quoting, case-insensitive `LIKE`, regular expressions, numeric conversion, fuzzy matching, paging). `PgSqlDialect` (in `Embix.Search.PgSql`) and `MySqlDialect` (in `Embix.Search.MySql`) implement it.
+- `SqlParameters` collects parameters while building SQL code: each added value gets a unique name, and its placeholder is returned (e.g. `@p0`).
+- `SqlWhereBuilder` collects the conditions of a `WHERE` clause with their parameters.
+- `QueryTextClauseBuilder` builds the condition for a field, an operator, and a value, with operators for equality, contains (`*=`), starts with (`^=`), ends with (`$=`), wildcards (`?=`), regular expressions (`~=`), fuzzy matching (`%=`, optionally with a minimum threshold as in `rome:0.4`), numeric comparisons, and bit tests. Text matches other than equality are case-insensitive, and user-entered LIKE special characters are escaped.
+- `SqlQuery` is SQL code with its parameters; `PagedSqlQuery` couples a page data query with its total count query.
+- `NonPagedQueryBuilder<TRequest>` and `PagedQueryBuilder<TRequest>` are base classes for building queries from requests: you implement `Build`, and get methods to execute them (`Get`/`GetAsync` and `GetPage`/`GetPageAsync`, returning a `DataPage<T>`). Their PostgreSQL and MySql subclasses provide the connection and dialect.
+
+For instance:
+
+```cs
+public sealed class TokenSearchBuilder(string connString)
+    : PgSqlPagedQueryBuilder<TokenRequest>(connString)
+{
+    private readonly QueryTextClauseBuilder _clauses = new();
+
+    public override PagedSqlQuery Build(TokenRequest request)
+    {
+        SqlWhereBuilder where = CreateWhere();
+        _clauses.AddClause(where, "t.value", request.Operator, request.Value);
+        if (request.Field != null)
+            where.Add($"o.field = {where.AddParameter(request.Field)}");
+
+        const string from = "FROM eix_occurrence o " +
+            "INNER JOIN eix_token t ON o.token_id = t.id ";
+        string paging = BuildPaging(where.Parameters, request);
+        return new PagedSqlQuery(
+            new SqlQuery($"SELECT DISTINCT o.target_id {from}{where.ToSql()} " +
+                $"ORDER BY o.target_id {paging}", where.Parameters),
+            new SqlQuery($"SELECT COUNT(DISTINCT o.target_id) {from}" +
+                where.ToSql(), where.Parameters));
+    }
+}
+
+// usage
+DataPage<string> page = await new TokenSearchBuilder(connString)
+    .GetPageAsync(request, r => r.GetString(0));
+```
+
+In PostgreSQL, fuzzy matching uses `pg_trgm` trigram similarity (0-1). The default minimum threshold is 0.3, i.e. the `pg_trgm` default. When the threshold is not lower than `PgSqlDialect.IndexSimilarityThreshold` (default 0.3, matching the `pg_trgm.similarity_threshold` setting), the condition also uses the `%` operator, so that it can be served by the trigram index.
 
 ## Embix CLI
 
@@ -253,7 +314,7 @@ Syntax:
 ```
 
 - `DatabaseName` is the target database name.
-- `-t` specifies the database type: `pgsql` or `mysql`. Other types will follow as they are needed. Adding a new type is as simple as creating a new project and implementing a couple of classes.
+- `-t` specifies the database type: `pgsql` (default) or `mysql` (legacy). Other types will follow as they are needed. Adding a new type is as simple as creating a new project and implementing a couple of classes.
 - `-c` tells the initializer to truncate the tables if they are found. Otherwise, the command will create them.
 
 ### Build Index Command
@@ -268,11 +329,11 @@ Syntax:
 
 - `JsonFilePath` is the path of the JSON profile file for Embix.
 - `DatabaseName` is the target database name.
-- `-t` specifies the database type: `pgsql` or `mysql`.
+- `-t` specifies the database type: `pgsql` (default) or `mysql` (legacy).
 - `-c` tells the initializer to truncate the tables if they are found. Otherwise, the command will create them.
-- `-p` specifies the number of partitions in which input records are distributed during indexing, thus parallelizing the process. The default value is 2. Use 1 to avoid multiple threads, or higher values for better performance (according to the available hardware).
+- `-p` specifies the number of partitions, i.e. of parallel workers among which input records are distributed during indexing, thus parallelizing the process. The default value is 2. Use 1 to avoid multiple threads, or higher values for better performance (according to the available hardware).
 - `-s` specifies the minimum partition size when using parallelized indexing (default=100). When the total number of records to be indexed for each document is less than this size, no parallelization will occur.
-- `-b` specifies the tokens buffer size. Default value is 100. This is the number of tokens which get buffered in memory before flushing them to the target database. Buffering avoids too many roundtrips to the server, with relevant performance gains.
+- `-b` specifies the tokens buffer size. Default value is 10000. This is the number of tokens which get buffered in memory before flushing them to the target database. Buffering avoids too many roundtrips to the server, with relevant performance gains.
 - `-l` specifies an artificial limit for the records to be imported. This can be used for test purposes.
 
 ### Inspect Characters Command
@@ -299,7 +360,7 @@ Syntax:
 - `JsonFilePath` is the path of the JSON profile file for Embix.
 - `DatabaseName` is the target database name.
 - `OutputPath` is the CSV output file path.
-- `-t` specifies the database type: `pgsql` or `mysql`.
+- `-t` specifies the database type: `pgsql` (default) or `mysql` (legacy).
 
 Sample output: a CSV file with columns for hexadecimal code, decimal code, Unicode category, glyph, and frequency.
 

@@ -1,6 +1,5 @@
-﻿using Embix.Core.Config;
-using SqlKata.Compilers;
-using System;
+﻿using Embix.Core;
+using Embix.Core.Config;
 using System.Reflection;
 
 namespace Embix.MySql;
@@ -17,13 +16,22 @@ public sealed class MySqlIndexBuilderFactory : IndexBuilderFactory
     /// </summary>
     /// <param name="profile">The profile code.</param>
     /// <param name="connString">The connection string.</param>
-    /// <exception cref="ArgumentNullException">connString</exception>
+    /// <param name="additionalAssemblies">The optional additional assemblies
+    /// to look for filters and tokenizers.</param>
+    /// <exception cref="System.ArgumentNullException">connString</exception>
     public MySqlIndexBuilderFactory(string profile, string connString,
         params Assembly[] additionalAssemblies)
         : base(profile,
               new MySqlDbConnectionFactory(connString),
-              new MySqlCompiler(),
               additionalAssemblies)
     {
     }
+
+    /// <summary>
+    /// Creates the index writer, quoting identifiers with backticks.
+    /// </summary>
+    /// <param name="profile">The profile.</param>
+    /// <returns>Writer.</returns>
+    protected override IIndexWriter CreateIndexWriter(EmbixProfile profile) =>
+        new SqlIndexWriter(profile, ConnectionFactory, "`", "`");
 }

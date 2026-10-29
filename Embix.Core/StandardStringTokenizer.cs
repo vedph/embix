@@ -32,9 +32,7 @@ public sealed class StandardStringTokenizer : IStringTokenizer
 
     private void SetCurrentToken(StringBuilder text, int start, int length)
     {
-        _sb.Clear();
-        for (int i = 0; i < length; i++)
-            _sb.Append(text[start + i]);
+        _sb.Clear().Append(text, start, length);
     }
 
     /// <summary>
@@ -51,10 +49,13 @@ public sealed class StandardStringTokenizer : IStringTokenizer
         {
             if (text[i] == ' ' || text[i] == '\'')
             {
-                SetCurrentToken(text, start, i - start);
-                Filter?.Apply(_sb);
-                if (_sb.Length > 0) yield return _sb.ToString();
-                start = ++i;
+                if (i > start)
+                {
+                    SetCurrentToken(text, start, i - start);
+                    Filter?.Apply(_sb);
+                    if (_sb.Length > 0) yield return _sb.ToString();
+                }
+                start = i + 1;
             }
         }
 

@@ -57,8 +57,7 @@ public sealed class CharInspector
 
         foreach (char c in text)
         {
-            if (!_counts.ContainsKey(c)) _counts[c] = 1;
-            else _counts[c]++;
+            _counts[c] = _counts.TryGetValue(c, out long n) ? n + 1 : 1;
         }
     }
 
@@ -72,9 +71,10 @@ public sealed class CharInspector
             new ProgressReport() : null;
 
         // get count
-        IDbCommand cmd = connection.CreateCommand();
+        using IDbCommand cmd = connection.CreateCommand();
         cmd.CommandText = doc.CountSql;
-        int result = (int)(long)cmd.ExecuteScalar();
+        int result = Convert.ToInt32(cmd.ExecuteScalar(),
+            CultureInfo.InvariantCulture);
 
         if (result == 0) return;
 
@@ -87,13 +87,14 @@ public sealed class CharInspector
             for (int i = 0; i < reader.FieldCount; i++)
             {
                 if (reader.IsDBNull(i)) continue;
-                string text = reader.GetString(i);
-                Inspect(text);
+                object value = reader.GetValue(i);
+                Inspect(value as string
+                    ?? Convert.ToString(value, CultureInfo.InvariantCulture)!);
             }
-            if (progress != null && ++count % 10 == 0)
+            if (progress != null && ++count % 10 == 0 && _calculator != null)
             {
                 report!.Count = count;
-                report.Percent = _calculator!.Calculate(
+                report.Percent = _calculator.Calculate(
                     _calculator.BigChunkCount,
                     count);
                 progress.Report(report);
@@ -128,7 +129,7 @@ public sealed class CharInspector
 
         foreach (DocumentDefinition doc in documents)
         {
-            _calculator!.Calculate(docCount, 0);
+            _calculator?.Calculate(docCount, 0);
             InspectDocument(connection, doc, cancel, progress);
             docCount++;
             if (cancel.IsCancellationRequested) break;

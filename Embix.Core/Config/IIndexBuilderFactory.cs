@@ -1,12 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using SimpleInjector;
+using System;
 
 namespace Embix.Core.Config
 {
     /// <summary>
-    /// Index builder factory interface.
+    /// Index builder factory interface. Disposing the factory flushes and
+    /// releases the index writer shared by its builders.
     /// </summary>
-    public interface IIndexBuilderFactory
+    public interface IIndexBuilderFactory : IDisposable
     {
         /// <summary>
         /// Gets or sets the size of the tokens buffer.
@@ -14,7 +16,7 @@ namespace Embix.Core.Config
         int BufferSize { get; set; }
 
         /// <summary>
-        /// Gets or sets the dependency container, configured to include all
+        /// Gets the dependency container, configured to include all
         /// the required assemblies for filter components.
         /// </summary>
         Container Container { get; }

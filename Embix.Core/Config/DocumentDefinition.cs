@@ -16,8 +16,12 @@ public class DocumentDefinition
     public string? CountSql { get; set; }
 
     /// <summary>
-    /// Gets or sets the data SQL, having two placeholders <c>{0}</c>=skip
-    /// count and <c>{1}</c>=limit.
+    /// Gets or sets the data SQL. Records are read once by a single reader,
+    /// in any order (no <c>ORDER BY</c> is required). The SQL may have two
+    /// optional placeholders, <c>{0}</c>=skip count (always 0) and
+    /// <c>{1}</c>=limit (the count of records to be processed, i.e. the
+    /// result of <see cref="CountSql"/>, eventually capped by the builder's
+    /// records limit).
     /// </summary>
     public string? DataSql { get; set; }
 

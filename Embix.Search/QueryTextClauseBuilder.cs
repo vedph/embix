@@ -1,26 +1,29 @@
-﻿using SqlKata;
-using SqlKata.Extensions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Embix.Search;
 
 /// <summary>
 /// SQL query text clause builder. This builds a single WHERE clause
-/// condition for a text field, using a number of different match operators
+/// condition for a field, using a number of different match operators
 /// for it: <c>=</c>=equal, <c>&lt;&gt;</c>=not equal, <c>*=</c>=contains,
 /// <c>^=</c>=starts with, <c>$=</c>=ends with, <c>?=</c>=match wildcards,
 /// <c>~=</c>=regular expression match, <c>%=</c>=fuzzy match (optionally
-/// suffixing the value with <c>:minimumTreshold</c>).
+/// suffixing the value with <c>:minimumThreshold</c>); numeric comparisons
+/// <c>==</c>, <c>!=</c>, <c>&lt;</c>, <c>&gt;</c>, <c>&lt;=</c>,
+/// <c>&gt;=</c>; and bit tests <c>:</c>=has any of the flags,
+/// <c>&amp;:</c>=has all the flags, <c>!:</c>=has none of the flags.
+/// Text matches other than equality are case-insensitive. The SQL code
+/// is built according to the <see cref="SqlDialect"/> of the parameters.
 /// </summary>
-/// <remarks>Currently this supports only MySql and PostgreSQL.</remarks>
 public class QueryTextClauseBuilder
 {
-    private static readonly char[] _wildcards = new[] { '*', '?' };
+    private static readonly char[] _wildcards = ['*', '?'];
+    private static readonly char[] _likeSpecials = ['\\', '%', '_'];
     private static readonly Regex _nrRegex = new("^[0-9a-fA-F]{1,8}$",
         RegexOptions.Compiled);
 
@@ -30,15 +33,16 @@ public class QueryTextClauseBuilder
     public char[] FlagSeparators { get; set; }
 
     /// <summary>
-    /// Gets the flags with their bit values.
+    /// Gets the flags with their bit values. Names are case-insensitive.
     /// </summary>
     public Dictionary<string, int> Flags { get; }
 
     /// <summary>
-    /// Gets or sets the default fuzzy matching minimum treshold.
-    /// Default is 0.9.
+    /// Gets or sets the default fuzzy matching minimum threshold (0-1).
+    /// Default is 0.3, i.e. the default threshold of the PostgreSQL
+    /// <c>pg_trgm</c> trigram similarity.
     /// </summary>
-    public double DefaultFuzzyTreshold { get; set; }
+    public double DefaultFuzzyThreshold { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QueryTextClauseBuilder"/>
@@ -46,9 +50,9 @@ public class QueryTextClauseBuilder
     /// </summary>
     public QueryTextClauseBuilder()
     {
-        DefaultFuzzyTreshold = 0.9D;
-        FlagSeparators = new[] { ',' };
-        Flags = new Dictionary<string, int>();
+        DefaultFuzzyThreshold = 0.3D;
+        FlagSeparators = [','];
+        Flags = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -59,100 +63,118 @@ public class QueryTextClauseBuilder
     /// <c>true</c> if the specified character is a wildcard; otherwise,
     /// <c>false</c>.
     /// </returns>
-    public static bool IsWildcard(char c) => _wildcards.Any(w => w == c);
+    public static bool IsWildcard(char c) => Array.IndexOf(_wildcards, c) > -1;
 
     /// <summary>
-    /// Adds a cast-numeric comparison clause.
+    /// Escapes the LIKE wildcards (<c>%</c>, <c>_</c>) and the escape
+    /// character (<c>\</c>, the default one in both PostgreSQL and MySql)
+    /// in the specified value, so that they are matched literally.
     /// </summary>
-    /// <param name="query">The query.</param>
-    /// <param name="name">The field name.</param>
-    /// <param name="op">The operator.</param>
     /// <param name="value">The value.</param>
-    protected virtual void AddNumericClause(Query query, string name, string op,
-        string value)
+    /// <returns>Escaped value.</returns>
+    public static string EscapeLike(string value)
     {
-        query.ForSqlServer(q => q.WhereRaw(
-            $"CAST(? AS DECIMAL(9,2)) {op} ?", name, value));
+        ArgumentNullException.ThrowIfNull(value);
+        if (value.IndexOfAny(_likeSpecials) == -1) return value;
 
-        query.ForMySql(q => q.WhereRaw($"(? + 0.0) {op} ?", name, value));
-
-        query.ForPostgreSql(q => q.WhereRaw(
-            $"CAST(? AS double precision) {op} ?", name, value));
+        StringBuilder sb = new(value.Length + 4);
+        foreach (char c in value)
+        {
+            if (Array.IndexOf(_likeSpecials, c) > -1) sb.Append('\\');
+            sb.Append(c);
+        }
+        return sb.ToString();
     }
 
     /// <summary>
-    /// Adds a regular expression match clause.
+    /// Builds a numeric comparison clause.
     /// </summary>
-    /// <param name="query">The query.</param>
-    /// <param name="name">The field name.</param>
+    /// <param name="parameters">The parameters.</param>
+    /// <param name="column">The quoted column.</param>
+    /// <param name="op">The SQL comparison operator.</param>
     /// <param name="value">The value.</param>
-    protected virtual void AddRegexClause(Query query, string name,
-        string value)
+    /// <returns>SQL condition.</returns>
+    protected virtual string BuildNumericClause(SqlParameters parameters,
+        string column, string op, string value)
     {
-        // Sql Server requires a UDF
-
-        query.ForMySql(q => q.WhereRaw($"[{name}] REGEXP ?", value));
-
-        query.ForPostgreSql(q => q.WhereRaw($"[{name}] ~ ?", value));
+        // a non-numeric value cannot match anything
+        if (!double.TryParse(value, NumberStyles.Float,
+            CultureInfo.InvariantCulture, out double n))
+        {
+            return "1 = 0";
+        }
+        return $"{parameters.Dialect.BuildNumber(column)} {op} {parameters.Add(n)}";
     }
+
+    /// <summary>
+    /// Builds a case-insensitive LIKE clause.
+    /// </summary>
+    /// <param name="parameters">The parameters.</param>
+    /// <param name="column">The quoted column.</param>
+    /// <param name="pattern">The LIKE pattern.</param>
+    /// <returns>SQL condition.</returns>
+    protected virtual string BuildLikeClause(SqlParameters parameters,
+        string column, string pattern) =>
+        parameters.Dialect.BuildLike(column, parameters.Add(pattern), true);
+
+    /// <summary>
+    /// Builds a regular expression match clause.
+    /// </summary>
+    /// <param name="parameters">The parameters.</param>
+    /// <param name="column">The quoted column.</param>
+    /// <param name="value">The regular expression.</param>
+    /// <returns>SQL condition.</returns>
+    protected virtual string BuildRegexClause(SqlParameters parameters,
+        string column, string value) =>
+        parameters.Dialect.BuildRegexMatch(column, parameters.Add(value));
 
     /// <summary>
     /// Parses the value of a fuzzy clause, which is either a simple text
-    /// to match, or this text followed by the minimum treshold for matching
-    /// introduced by a colon. If no treshold is specified,
-    /// <see cref="DefaultFuzzyTreshold"/> is used.
+    /// to match, or this text followed by the minimum threshold for matching
+    /// introduced by a colon. If no threshold is specified,
+    /// <see cref="DefaultFuzzyThreshold"/> is used.
     /// </summary>
     /// <param name="value">The value.</param>
-    /// <returns>Tuple where 1=text and 2=treshold.</returns>
-    protected Tuple<string, double> ParseFuzzyValue(string value)
+    /// <returns>Tuple where 1=text and 2=threshold.</returns>
+    protected (string Text, double Threshold) ParseFuzzyValue(string value)
     {
-        // extract treshold from value (N:T) or assume default if not specified
-        string text = value;
-        double treshold = DefaultFuzzyTreshold;
-
+        // extract threshold from value (N:T) or assume default if not specified
         int i = value.LastIndexOf(':');
-        if (i > -1)
+        if (i > -1 && double.TryParse(value.AsSpan(i + 1), NumberStyles.Float,
+            CultureInfo.InvariantCulture, out double threshold))
         {
-            text = value[..i];
-            if (!double.TryParse(value.AsSpan(i + 1), NumberStyles.Float,
-                CultureInfo.InvariantCulture, out treshold))
-            {
-                treshold = DefaultFuzzyTreshold;
-            }
+            return (value[..i], threshold);
         }
-        return Tuple.Create(text, treshold);
+        return (i > -1 ? value[..i] : value, DefaultFuzzyThreshold);
     }
 
     /// <summary>
-    /// Adds a fuzzy match comparison clause.
+    /// Builds a fuzzy match clause.
     /// </summary>
-    /// <param name="query">The query.</param>
-    /// <param name="name">The field name.</param>
-    /// <param name="value">The value.</param>
-    protected virtual void AddFuzzyMatchClause(Query query, string name,
-        string value)
+    /// <param name="parameters">The parameters.</param>
+    /// <param name="column">The quoted column.</param>
+    /// <param name="value">The value, optionally followed by colon and
+    /// threshold.</param>
+    /// <returns>SQL condition.</returns>
+    protected virtual string BuildFuzzyClause(SqlParameters parameters,
+        string column, string value)
     {
-        var t = ParseFuzzyValue(value);
-
-        // Sql Server requires a UDF
-
-        query.ForMySql(q => q.WhereRaw($"SIMILARITY_STRING([{name}],?) >= ?",
-            t.Item1, t.Item2));
-
-        query.ForPostgreSql(q => q.WhereRaw(
-            $"cast(levenshtein({name},?) as double precision) / " +
-            "greatest(length(?), length(?)) >= ?",
-            t.Item1, name, t.Item1, t.Item2));
+        var (text, threshold) = ParseFuzzyValue(value);
+        return parameters.Dialect.BuildSimilarity(column,
+            parameters.Add(text), parameters.Add(threshold), threshold);
     }
 
     private int ParseFlag(string flag)
     {
+        // named flags first, as some names (e.g. "bad") are also hex numbers
+        if (Flags.TryGetValue(flag, out int value)) return value;
+
         if (_nrRegex.IsMatch(flag))
         {
             return int.Parse(flag, NumberStyles.HexNumber,
                 CultureInfo.InvariantCulture);
         }
-        return Flags.ContainsKey(flag) ? Flags[flag] : 0;
+        return 0;
     }
 
     /// <summary>
@@ -166,106 +188,118 @@ public class QueryTextClauseBuilder
     {
         if (string.IsNullOrEmpty(flags)) return 0;
 
-        // parse all the values and OR them into n
-        int[] values = (from s in flags.ToLowerInvariant().Split(
-            FlagSeparators, StringSplitOptions.RemoveEmptyEntries)
-                        select ParseFlag(s)).ToArray();
         int n = 0;
-        foreach (int v in values) n |= v;
-
+        foreach (string s in flags.Split(FlagSeparators,
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            n |= ParseFlag(s);
+        }
         return n;
     }
 
     /// <summary>
-    /// Adds the bit test clause.
+    /// Builds a bit test clause.
     /// </summary>
-    /// <param name="query">The query.</param>
-    /// <param name="name">The field name.</param>
-    /// <param name="op">The op.</param>
-    /// <param name="value">The value.</param>
-    protected virtual void AddBitTestClause(Query query, string name,
-        string op, string value)
+    /// <param name="parameters">The parameters.</param>
+    /// <param name="column">The quoted column.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The flags.</param>
+    /// <returns>SQL condition.</returns>
+    protected virtual string BuildBitTestClause(SqlParameters parameters,
+        string column, string op, string value)
     {
         int n = GetFlagsValue(value);
-        string tail = op switch
+        string p = parameters.Add(n);
+        return op switch
         {
-            "&:" => " = " + n,  // & n = n
-            "!:" => " = 0",     // & n = 0
-            _ => " <> 0",       // & n <> 0
+            "&:" => $"({column} & {p}) = {p}",
+            "!:" => $"({column} & {p}) = 0",
+            _ => $"({column} & {p}) <> 0",
         };
-        query.WhereRaw("(? & ?)" + tail, name, n);
     }
 
     /// <summary>
-    /// Adds to <paramref name="query"/> the clause for the condition
-    /// specified by a field name, an operator, and a value.
+    /// Builds the condition for a field name, an operator, and a value.
     /// </summary>
-    /// <param name="query">The query.</param>
-    /// <param name="name">The field name.</param>
+    /// <param name="parameters">The parameters to add values to.</param>
+    /// <param name="name">The field name, optionally qualified (e.g.
+    /// <c>t.value</c>). This is quoted according to the dialect.</param>
     /// <param name="op">The operator.</param>
     /// <param name="value">The value.</param>
-    /// <returns>The input query (for chaining).</returns>
-    public Query AddClause(Query query, string name, string op, string value)
+    /// <returns>The SQL condition, or null if the operator is unknown.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">any argument</exception>
+    public string? BuildClause(SqlParameters parameters, string name,
+        string op, string value)
     {
+        ArgumentNullException.ThrowIfNull(parameters);
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(op);
+        ArgumentNullException.ThrowIfNull(value);
+
+        string column = parameters.Dialect.QuoteIdentifier(name);
         switch (op)
         {
             case "=":   // equal
-                query.Where(name, "=", value);
-                break;
+                return $"{column} = {parameters.Add(value)}";
             case "<>":  // not equal
-                query.Where(name, "<>", value);
-                break;
+                return $"{column} <> {parameters.Add(value)}";
             case "*=":  // contains
-                query.WhereContains(name, value);
-                break;
+                return BuildLikeClause(parameters, column,
+                    "%" + EscapeLike(value) + "%");
             case "^=":  // starts-with
-                query.WhereStarts(name, value);
-                break;
+                return BuildLikeClause(parameters, column, EscapeLike(value) + "%");
             case "$=":  // ends-with
-                query.WhereEnds(name, value);
-                break;
+                return BuildLikeClause(parameters, column, "%" + EscapeLike(value));
             case "?=":  // wildcards (?=1 char, *=0-N chars)
                 // if value has no wildcards, fallback to equals
                 if (value.IndexOfAny(_wildcards) == -1)
                     goto case "=";
                 // translate wildcards: * => %, ? => _
-                string wild = value.Replace('*', '%').Replace('?', '_');
-                query.WhereLike(name, wild);
-                break;
+                return BuildLikeClause(parameters, column,
+                    EscapeLike(value).Replace('*', '%').Replace('?', '_'));
             case "~=":  // regex
-                AddRegexClause(query, name, value);
-                break;
-            case "%=":  // fuzzy (with optional treshold)
-                AddFuzzyMatchClause(query, name, value);
-                break;
+                return BuildRegexClause(parameters, column, value);
+            case "%=":  // fuzzy (with optional threshold)
+                return BuildFuzzyClause(parameters, column, value);
             case "==":  // equal (numeric)
-                AddNumericClause(query, name, "=", value);
-                break;
+                return BuildNumericClause(parameters, column, "=", value);
             case "!=":  // not equal (numeric)
-                AddNumericClause(query, name, "<>", value);
-                break;
+                return BuildNumericClause(parameters, column, "<>", value);
             case "<":   // less-than (numeric)
-                AddNumericClause(query, name, "<=", value);
-                break;
+                return BuildNumericClause(parameters, column, "<", value);
             case ">":   // greater-than (numeric)
-                AddNumericClause(query, name, ">", value);
-                break;
+                return BuildNumericClause(parameters, column, ">", value);
             case "<=":   // less-than or equal (numeric)
-                AddNumericClause(query, name, "<=", value);
-                break;
+                return BuildNumericClause(parameters, column, "<=", value);
             case ">=":   // greater-than or equal (numeric)
-                AddNumericClause(query, name, ">=", value);
-                break;
+                return BuildNumericClause(parameters, column, ">=", value);
             case ":":   // has any bitvalue of
             case "&:":  // has all bitvalues of
             case "!:":  // has not any bitvalue of
-                AddBitTestClause(query, name, op, value);
-                break;
+                return BuildBitTestClause(parameters, column, op, value);
             default:
                 Debug.WriteLine("Unknown operator: " + op);
-                break;
+                return null;
         }
+    }
 
-        return query;
+    /// <summary>
+    /// Adds to <paramref name="where"/> the condition specified by a field
+    /// name, an operator, and a value. Unknown operators add nothing.
+    /// </summary>
+    /// <param name="where">The where builder.</param>
+    /// <param name="name">The field name, optionally qualified.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value.</param>
+    /// <returns>The where builder (for chaining).</returns>
+    /// <exception cref="ArgumentNullException">any argument</exception>
+    public SqlWhereBuilder AddClause(SqlWhereBuilder where, string name,
+        string op, string value)
+    {
+        ArgumentNullException.ThrowIfNull(where);
+        string? clause = BuildClause(where.Parameters, name, op, value);
+        if (clause != null) where.Add(clause);
+        return where;
     }
 }

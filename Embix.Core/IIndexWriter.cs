@@ -38,4 +38,11 @@ public interface IIndexWriter : IDisposable
     /// </param>
     void Write(string documentId, int partitionNr, string field, string token,
         IDictionary<string, object>? metadata = null);
+
+    /// <summary>
+    /// Flushes any buffered data to the output. This is called by
+    /// <see cref="IndexBuilder"/> once all the partitions of a document
+    /// have been processed. The writer remains usable after flushing.
+    /// </summary>
+    void Flush();
 }

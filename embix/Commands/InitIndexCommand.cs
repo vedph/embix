@@ -36,7 +36,7 @@ namespace Embix.Commands
                 "The database name");
 
             CommandOption dbTypeOption = command.Option("-t|--type",
-                "The type of database: mysql (default), pgsql",
+                "The type of database: pgsql (default), mysql",
                 CommandOptionType.SingleValue);
 
             CommandOption clearOption = command.Option("-c|--clear",
@@ -48,7 +48,7 @@ namespace Embix.Commands
                 options.Command = new InitIndexCommand(
                     options,
                     dbNameArgument.Value,
-                    dbTypeOption.Value() ?? "mysql",
+                    dbTypeOption.Value() ?? "pgsql",
                     clearOption.HasValue());
                 return 0;
             });

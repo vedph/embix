@@ -18,6 +18,8 @@ namespace Embix.Core.Config;
 public sealed class EmbixProfile
 {
     private readonly Dictionary<string, DocumentDefinition> _documents;
+    // documents in their definition order
+    private readonly List<DocumentDefinition> _documentList = [];
     private readonly EmbixFilterFactory _filterFactory;
 
     /// <summary>
@@ -72,13 +74,38 @@ public sealed class EmbixProfile
     /// Gets the documents definitions.
     /// </summary>
     public IReadOnlyList<DocumentDefinition> GetDocuments() =>
-        _documents.Values.ToList();
+        _documentList.AsReadOnly();
+
+    private static Dictionary<string, int>? ReadLengths(JsonElement root,
+        string name)
+    {
+        if (!root.TryGetProperty(name, out JsonElement lengths)
+            || lengths.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+        return lengths.Deserialize<Dictionary<string, int>>();
+    }
 
     private void LoadDocuments(string json)
     {
         _documents.Clear();
+        _documentList.Clear();
 
-        JsonDocument doc = JsonDocument.Parse(json);
+        using JsonDocument doc = JsonDocument.Parse(json);
+
+        // TokenFieldLengths, OccurrenceFieldLengths: specified lengths
+        // override the defaults
+        foreach (var (name, target) in new[]
+        {
+            (nameof(TokenFieldLengths), TokenFieldLengths),
+            (nameof(OccurrenceFieldLengths), OccurrenceFieldLengths)
+        })
+        {
+            Dictionary<string, int>? lengths = ReadLengths(doc.RootElement, name);
+            if (lengths == null) continue;
+            foreach (var kv in lengths) target[kv.Key] = kv.Value;
+        }
 
         // MetadataFields
         if (doc.RootElement.TryGetProperty("MetadataFields", out JsonElement meta))
@@ -88,12 +115,16 @@ public sealed class EmbixProfile
             MetadataFields = Array.Empty<string>();
 
         // Documents
-        foreach (JsonElement child in doc.RootElement.GetProperty("Documents")
-            .EnumerateArray())
+        if (!doc.RootElement.TryGetProperty("Documents", out JsonElement docs))
+            return;
+        foreach (JsonElement child in docs.EnumerateArray())
         {
-            DocumentDefinition dd = JsonSerializer.Deserialize<DocumentDefinition>(
-                child.GetRawText())!;
-            _documents[dd.Id!] = dd;
+            DocumentDefinition dd = child.Deserialize<DocumentDefinition>()!;
+            if (string.IsNullOrEmpty(dd.Id))
+                throw new InvalidOperationException("Document without Id in profile");
+            if (!_documents.TryAdd(dd.Id, dd))
+                throw new InvalidOperationException("Duplicate document Id: " + dd.Id);
+            _documentList.Add(dd);
         }
     }
 
@@ -104,7 +135,7 @@ public sealed class EmbixProfile
     /// <returns>Document or null if not found.</returns>
     public DocumentDefinition? GetDocument(string id)
     {
-        return _documents.ContainsKey(id) ? _documents[id] : null;
+        return _documents.TryGetValue(id, out DocumentDefinition? doc) ? doc : null;
     }
 
     /// <summary>

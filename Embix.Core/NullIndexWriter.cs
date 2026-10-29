@@ -44,7 +44,15 @@ public sealed class NullIndexWriter : IIndexWriter
         if (token == null)
             throw new ArgumentNullException(nameof(token));
 
-        Logger?.LogDebug($"[#{partitionNr:000}] Write: {documentId}.{field}: {token}");
+        Logger?.LogDebug("[#{PartitionNr:000}] Write: {DocumentId}.{Field}: {Token}",
+            partitionNr, documentId, field, token);
+    }
+
+    /// <summary>
+    /// Does nothing.
+    /// </summary>
+    public void Flush()
+    {
     }
 
     private void Dispose(bool disposing)

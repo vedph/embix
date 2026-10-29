@@ -11,7 +11,7 @@ namespace Embix.Core;
 /// for each partition.
 /// </summary>
 /// <seealso cref="IndexWriter" />
-public abstract class BufferedIndexWriter : IndexWriter
+public abstract class BufferedIndexWriter : IndexWriter, IDisposable
 {
     private readonly ConcurrentDictionary<int, IndexWriterBuffer> _buffers;
     // there is no concurrent HashSet, so we use a dictionary to store
@@ -32,17 +32,16 @@ public abstract class BufferedIndexWriter : IndexWriter
     /// class.
     /// </summary>
     /// <param name="profile">The profile to be used.</param>
-    /// <exception cref="ArgumentNullException">profile or getConnection or
-    /// compiler</exception>
+    /// <exception cref="ArgumentNullException">profile</exception>
     protected BufferedIndexWriter(EmbixProfile profile) : base(profile)
     {
         _buffers = new ConcurrentDictionary<int, IndexWriterBuffer>();
         _savedTokens = new ConcurrentDictionary<int, bool>();
-        BufferSize = 100;
+        BufferSize = 10000;
     }
 
     /// <summary>
-    /// Gets a record writer.
+    /// Gets a new record writer. The caller owns the returned writer.
     /// </summary>
     /// <returns>Record writer.</returns>
     protected abstract IIndexRecordWriter GetRecordWriter();
@@ -54,17 +53,14 @@ public abstract class BufferedIndexWriter : IndexWriter
     /// <param name="record">The record.</param>
     protected void EnqueueRecord(int partitionNr, IndexRecord record)
     {
-        // create the partition's buffer if it does not exist
-        if (!_buffers.ContainsKey(partitionNr))
-        {
-            _buffers[partitionNr] = new IndexWriterBuffer(
-                GetRecordWriter(), _savedTokens);
-        }
-        IndexWriterBuffer buffer = _buffers[partitionNr];
+        IndexWriterBuffer buffer = _buffers.GetOrAdd(partitionNr,
+            _ => new IndexWriterBuffer(GetRecordWriter(), _savedTokens));
         buffer.Add(record);
 
-        // flush when buffer size limit reached
-        if (buffer.Count >= BufferSize) buffer.Flush();
+        // flush when buffer size limit reached (not counting records
+        // deferred by a previous flush, which would cause a flush
+        // at each write)
+        if (buffer.PendingCount >= BufferSize) buffer.Flush();
     }
 
     /// <summary>
@@ -83,26 +79,44 @@ public abstract class BufferedIndexWriter : IndexWriter
         string token,
         IDictionary<string, object>? metadata = null)
     {
-        Logger?.LogDebug($"[#{partitionNr:000}] Write: {documentId}.{field}: {token}");
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (Logger?.IsEnabled(LogLevel.Debug) == true)
+        {
+            Logger.LogDebug("[#{PartitionNr:000}] Write: {DocumentId}.{Field}: {Token}",
+                partitionNr, documentId, field, token);
+        }
         IndexRecord record = GetTokenRecord(documentId, field, token, metadata);
         EnqueueRecord(partitionNr, record);
     }
 
-    private void FlushAllBuffers()
+    /// <summary>
+    /// Flushes all the buffers. When flushing all the buffers at the end
+    /// of a document, we must ensure that we first write ALL the tokens
+    /// from ALL the buffers; and then their occurrences. This must not be
+    /// called while other threads are writing.
+    /// </summary>
+    public void Flush()
     {
-        // when flushing all the buffers at the end of the document,
-        // we must ensure that we first write ALL the tokens from ALL
-        // the buffers; and then their occurrences.
+        ObjectDisposedException.ThrowIf(_disposed, this);
         Logger?.LogInformation("Flushing all buffers");
 
-        List<IndexRecord> records = new();
+        List<IndexRecord> records = [];
         foreach (IndexWriterBuffer buffer in _buffers.Values)
             records.AddRange(buffer.Extract());
-        IIndexRecordWriter writer = GetRecordWriter();
+        if (records.Count == 0) return;
 
-        writer.Write(records);
+        using (IIndexRecordWriter writer = GetRecordWriter())
+        {
+            writer.Write(records);
+        }
 
-        Logger?.LogInformation("Flushed: " + records.Count);
+        foreach (IndexRecord record in records)
+        {
+            if (record.Token != null) _savedTokens[record.TokenId] = true;
+        }
+
+        Logger?.LogInformation("Flushed: {Count}", records.Count);
     }
 
     /// <summary>
@@ -113,19 +127,28 @@ public abstract class BufferedIndexWriter : IndexWriter
     /// </param>
     protected virtual void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if (_disposed) return;
+        if (disposing)
         {
-            if (disposing) FlushAllBuffers();
-            _disposed = true;
+            try
+            {
+                Flush();
+            }
+            finally
+            {
+                foreach (IndexWriterBuffer buffer in _buffers.Values)
+                    buffer.Dispose();
+                _buffers.Clear();
+            }
         }
+        _disposed = true;
     }
 
     /// <summary>
-    /// Releases unmanaged and - optionally - managed resources.
+    /// Flushes all the buffers and releases resources.
     /// </summary>
     public void Dispose()
     {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)'
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }

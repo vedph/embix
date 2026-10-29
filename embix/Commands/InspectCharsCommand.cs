@@ -50,7 +50,7 @@ namespace Embix.Commands
                 "The output path");
 
             CommandOption dbTypeOption = command.Option("-t|--type",
-                "The type of database: mysql (default), mssql, pgsql",
+                "The type of database: pgsql (default), mysql",
                 CommandOptionType.SingleValue);
 
             command.OnExecute(() =>
@@ -60,7 +60,7 @@ namespace Embix.Commands
                     profilePathArgument.Value,
                     outputPathArgument.Value,
                     dbNameArgument.Value,
-                    dbTypeOption.Value() ?? "mysql");
+                    dbTypeOption.Value() ?? "pgsql");
                 return 0;
             });
         }

@@ -1,6 +1,5 @@
-﻿using Npgsql;
-using SqlKata.Compilers;
-using System.Data;
+using Npgsql;
+using System.Data.Common;
 
 namespace Embix.Search.PgSql;
 
@@ -26,13 +25,13 @@ public abstract class PgSqlNonPagedQueryBuilder<TRequest>
     /// </summary>
     /// <param name="connString">The connection string.</param>
     /// <returns>The connection.</returns>
-    protected override IDbConnection GetConnection(string connString)
+    protected override DbConnection GetConnection(string connString)
         => new NpgsqlConnection(connString);
 
     /// <summary>
-    /// Gets the SQL compiler.
+    /// Creates the SQL dialect.
     /// </summary>
-    /// <returns>The compiler.</returns>
-    protected override Compiler GetSqlCompiler()
-        => new PostgresCompiler();
+    /// <returns>The dialect.</returns>
+    protected override SqlDialect CreateDialect()
+        => new PgSqlDialect();
 }

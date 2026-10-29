@@ -25,6 +25,12 @@ public class IndexRecord
     public IndexRecordNames Names { get; }
 
     /// <summary>
+    /// Gets the ID of the token this record's occurrence refers to (the
+    /// first value of <see cref="Occurrence"/>).
+    /// </summary>
+    public int TokenId => (int)Occurrence![0];
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="IndexRecord"/> class.
     /// </summary>
     /// <param name="names">The names.</param>

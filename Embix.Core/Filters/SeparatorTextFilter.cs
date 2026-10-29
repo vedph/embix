@@ -63,5 +63,5 @@ public class SeparatorTextFilterOptions
     /// <summary>
     /// Gets or sets the separator characters.
     /// </summary>
-    public string Separators { get; set; }
+    public string Separators { get; set; } = "";
 }

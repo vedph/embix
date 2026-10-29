@@ -2,6 +2,7 @@
   <Folder Name="/Solution Items/">
     <File Path="CHANGELOG.md" />
     <File Path="flow.png" />
+    <File Path="global.json" />
     <File Path="Pack.bat" />
     <File Path="Push.bat" />
     <File Path="PushLocal.bat" />
@@ -11,6 +12,7 @@
   <Project Path="Embix.Core/Embix.Core.csproj" />
   <Project Path="Embix.MySql/Embix.MySql.csproj" />
   <Project Path="Embix.PgSql/Embix.PgSql.csproj" />
+  <Project Path="Embix.PgSql.Test/Embix.PgSql.Test.csproj" />
   <Project Path="Embix.Plugin.Greek.Test/Embix.Plugin.Greek.Test.csproj" />
   <Project Path="Embix.Plugin.Greek/Embix.Plugin.Greek.csproj" />
   <Project Path="Embix.Search.MySql/Embix.Search.MySql.csproj" />
